@@ -86,7 +86,7 @@ static bool NO_EARPIECE = 1;
 /* number of frames per long period (low power) */
 #define LONG_PERIOD_SIZE (SHORT_PERIOD_SIZE * LONG_PERIOD_MULTIPLIER)
 /* number of pseudo periods for playback */
-#define PLAYBACK_PERIOD_COUNT 4
+#define PLAYBACK_PERIOD_COUNT 3
 /* number of periods for capture */
 #define CAPTURE_PERIOD_COUNT 2
 /* minimum sleep time in out_write() when write threshold is not reached */
@@ -108,7 +108,6 @@ static bool NO_EARPIECE = 1;
 static bool last_call_path_is_bt = 0;
 static bool dmic_used = 0;
 static bool last_communication_is_bt = 0;
-
 
 /*VOLUME CTL*/
 #define MIXER_HP_VOLUME "headphone volume"
@@ -1736,6 +1735,7 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
 		WritePcmData((void *)buf, out_frames * frame_size, &adev->PcmManager);
 		memset(buf, 0, out_frames * frame_size); //mute
 	}
+
     ret = pcm_write(out->pcm, (void *)buf, out_frames * frame_size);
 	if(ret!=0)
 	{
@@ -2390,6 +2390,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
     struct sunxi_stream_in *in 		= (struct sunxi_stream_in *)stream;
     struct sunxi_audio_device *adev = in->dev;
     size_t frames_rq 				= bytes / audio_stream_frame_size(&stream->common);
+    int is_first_data = 0;
 
     if (adev->mode == AUDIO_MODE_IN_CALL) {
 	//ALOGD("in call mode, in_read, return ;");
@@ -2432,6 +2433,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
 	pthread_mutex_lock(&in->lock);
 	if (in->standby) {
 		ret = start_input_stream(in);
+		is_first_data = 1;
 		if (ret == 0)
 			in->standby = 0;
 	}
@@ -2448,6 +2450,15 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
 
 	} else {
         ret = pcm_read(in->pcm, buffer, bytes);
+	}
+
+
+	/* If connect headset, set the first data to zero.
+	 * There may be a noise pulse.
+	 */
+	if (is_first_data &&
+			(adev->in_device & AUDIO_DEVICE_IN_WIRED_HEADSET)) {
+		memset(buffer, 0, bytes);
 	}
 
     if (ret > 0)
@@ -2962,6 +2973,7 @@ static int adev_close(hw_device_t *device)
 	audio_route_free(adev->ar);
 	free(adev->vol_array);
 	free(device);
+
 	return 0;
 }
 

@@ -333,6 +333,7 @@ void *commit_thread(void *priv)
     hwc_dispc_data_t *DisplayData = NULL;
     int i = 0, j = 0, ret = -1, lyr = 0, rotatecall = 0;
     int primary_disp = 0, video_fence_fd = -1, share_fd = -1;
+    int unblank_count = 0;
     unsigned long arg[4] = {0};
     unsigned int current_sync_count = 0, cusor_sync = 0;
     hwc_ioctl_arg hwc_cmd;
@@ -498,6 +499,28 @@ deal_fence:
                 arg[0] = 0;
                 arg[1] = (unsigned long)(&hwc_cmd);
                 ret = ioctl(Globctx->DisplayFd, DISP_HWC_COMMIT, (unsigned long)arg);
+                
+                if(Globctx->unblank_flag)
+                {
+                		if(unblank_count == 3)
+                       {
+                           	unsigned long               arg[4]={0};
+                                DisplayInfo   *PsDisplayInfo = &Globctx->SunxiDisplay[DisplayData->first_disp];
+                                
+                                if(PsDisplayInfo->VirtualToHWDisplay !=  -EINVAL)
+                                {
+                                         arg[0] = PsDisplayInfo->VirtualToHWDisplay;
+                                         arg[1] = 0;
+                                         if(ioctl(Globctx->DisplayFd, DISP_BLANK, (unsigned long)arg) != 0)
+                                                           ALOGE("##########unblank error!");
+                                }
+                                
+                                Globctx->unblank_flag = 0;
+                                unblank_count = 0;
+                       }
+                       
+                       unblank_count++;
+                }
                 /* check wb and display to HDMI or miracast */
 
                 /* update cursor disp data */

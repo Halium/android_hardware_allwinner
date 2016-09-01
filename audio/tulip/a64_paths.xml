@@ -22,8 +22,8 @@
   <path name="media-speaker-off">
     <ctl name="AIF1IN0L Mux" value="AIF1_DA0L" />
     <ctl name="AIF1IN0R Mux" value="AIF1_DA0R" />
-    <ctl name="DACL Mixer AIF1DA0L Switch" value="1" />
-    <ctl name="DACR Mixer AIF1DA0R Switch" value="1" />
+    <ctl name="DACL Mixer AIF1DA0L Switch" value="0" />
+    <ctl name="DACR Mixer AIF1DA0R Switch" value="0" />
     <ctl name="Left Output Mixer DACL Switch" value="1" />
     <ctl name="Right Output Mixer DACR Switch" value="1" />
     <ctl name="SPK_L Mux" value="MIXEL Switch" />
@@ -56,8 +56,8 @@
   <path name="media-single-speaker-off">
 		<ctl name="AIF1IN0L Mux" value="AIF1_DA0L" />
     <ctl name="AIF1IN0R Mux" value="AIF1_DA0R" />
-    <ctl name="DACL Mixer AIF1DA0L Switch" value="1" />
-    <ctl name="DACR Mixer AIF1DA0R Switch" value="1" />
+    <ctl name="DACL Mixer AIF1DA0L Switch" value="0" />
+    <ctl name="DACR Mixer AIF1DA0R Switch" value="0" />
     <ctl name="Left Output Mixer DACL Switch" value="1" />
     <ctl name="Left Output Mixer DACR Switch" value="1" />
     <ctl name="SPK_L Mux" value="MIXL MIXR  Switch" />

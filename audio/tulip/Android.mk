@@ -17,7 +17,7 @@ LOCAL_PATH := $(call my-dir)
 # libAwHeadpSurround
 include $(CLEAR_VARS)
 LOCAL_MODULE := libAwHeadpSurround
-LOCAL_SRC_FILES := libAwHeadpSurround.so
+LOCAL_SRC_FILES := audio_3d_surround/libAwHeadpSurround.so
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_SUFFIX := .so
@@ -31,7 +31,7 @@ LOCAL_MODULE := audio.primary.$(TARGET_BOARD_PLATFORM)
 #LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE_RELATIVE_PATH := hw
 
-LOCAL_SRC_FILES := audio_hw.c audio_iface.c sunxi_volume.c
+LOCAL_SRC_FILES := audio_hw.c audio_iface.c sunxi_volume.c audio_3d_surround/audio_3d_surround.c
 
 #ifneq ($(SW_BOARD_HAVE_3G), true)
 #LOCAL_SRC_FILES += audio_ril_stub.c 

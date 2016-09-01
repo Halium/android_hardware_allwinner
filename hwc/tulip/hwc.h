@@ -185,6 +185,7 @@ typedef struct {
     int                 share_fd;//ion_handle share_fd
     int                 size_buffer;
     bool                valid;
+    bool                is_secure;
 }hwc_cache_t;
 
 typedef struct {
@@ -207,6 +208,7 @@ typedef struct {
     int                 share_fd;
     bool                needsync;//for sw_write
     bool                iscursor;
+    bool                is_secure;
     disp_layer_config   hwc_layer_info;
 }hwc_commit_layer_t;
 
@@ -286,6 +288,7 @@ typedef struct layer_info {
     bool            is3D;
     bool            is_cursor;
     bool            need_sync;
+    bool            is_secure;
     int             shared_fd;
     format_info     form_info;
     AssignDUETO_T   info;
@@ -312,7 +315,6 @@ typedef struct{
     bool                VsyncEnable;
     bool                issecure;
     bool                active;
-    bool                setblank;
     
     int                 HwChannelNum;
     int                 LayerNumofCH;
@@ -460,6 +462,7 @@ typedef struct
     int                 fb_pre_mem;
     /* end mem limit */
 	int					unblank_flag;
+	unsigned char       has_secure;
 
 }SUNXI_hwcdev_context_t;
 
@@ -603,8 +606,8 @@ static inline int check_valid_format(int format)
         //case HAL_PIXEL_FORMAT_RGB_888:
         case HAL_PIXEL_FORMAT_RGB_565:
         case HAL_PIXEL_FORMAT_BGRA_8888:
-        case HAL_PIXEL_FORMAT_sRGB_A_8888:
-        case HAL_PIXEL_FORMAT_sRGB_X_8888:
+        //case HAL_PIXEL_FORMAT_sRGB_A_8888:
+        //case HAL_PIXEL_FORMAT_sRGB_X_8888:
         case HAL_PIXEL_FORMAT_YV12:
 	    case HAL_PIXEL_FORMAT_YCrCb_420_SP:
         case HAL_PIXEL_FORMAT_BGRX_8888:
@@ -690,8 +693,8 @@ static inline bool check_support_blending(int format)
         case HAL_PIXEL_FORMAT_RGB_888:
         case HAL_PIXEL_FORMAT_RGB_565:
         case HAL_PIXEL_FORMAT_BGRA_8888:
-        case HAL_PIXEL_FORMAT_sRGB_A_8888:
-        case HAL_PIXEL_FORMAT_sRGB_X_8888:
+        //case HAL_PIXEL_FORMAT_sRGB_A_8888:
+        //case HAL_PIXEL_FORMAT_sRGB_X_8888:
         case HAL_PIXEL_FORMAT_BGRX_8888:
             return 1;
         default:

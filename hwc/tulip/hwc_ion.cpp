@@ -17,6 +17,13 @@
 
 #include "hwc.h"
 
+typedef struct {
+    ion_user_handle_t handle;
+    unsigned int phys_addr;
+    unsigned int size;
+}sunxi_phys_data;
+#define ION_IOC_SUNXI_PHYS_ADDR     7
+
 ion_user_handle_t ion_alloc_buffer(int iAllocBytes, unsigned int heap_mask)
 {
     SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
@@ -36,7 +43,7 @@ ion_user_handle_t ion_alloc_buffer(int iAllocBytes, unsigned int heap_mask)
 	    ALOGW("%s: ION_IOC_ALLOC failed (ret=%d)", __func__,  ret);
 	    return (ion_user_handle_t) -1;
 	}
-	
+
 	return sAllocInfo.handle;
 }
 
@@ -64,7 +71,7 @@ unsigned int ion_get_addr_fromfd(int sharefd)
 	sunxi_phys_data phys_data;
     ion_handle_data freedata;
     struct ion_fd_data data ;
-    
+
     data.fd = sharefd;
     ret = ioctl(Globctx->IonFd, ION_IOC_IMPORT, &data);
     if (ret < 0)
@@ -88,7 +95,7 @@ unsigned int ion_get_addr_fromfd(int sharefd)
         ALOGE("%s: ION_IOC_FREE failed(ret=%d)", __func__, ret);
         return 0;
     }
-    return phys_data.phys_addr;  
+    return phys_data.phys_addr;
 }
 
 unsigned long ion_get_addr_from_handle(ion_user_handle_t handle)
@@ -122,7 +129,7 @@ ion_user_handle_t ion_handle_add_ref(int sharefd)
         ALOGE("%s: ION_IOC_IMPORT failed(ret=%d)", __func__, ret);
         return -1;
     }
-    return data.handle;  
+    return data.handle;
 }
 
 void ion_handle_dec_ref(ion_user_handle_t handle_id)
@@ -180,7 +187,7 @@ void ion_free_cache(hwc_ion_hold_t *ion_cache)
 bool hwc_manage_ref_cache(bool cache, hwc_dispc_data_t *dispc_data)
 {
     hwc_ion_hold_t  *ion_cache = NULL;
-    int i, little_sync, cnt = 0, size = 0; 
+    int i, little_sync, cnt = 0, size = 0;
     hwc_commit_layer_t *commit_layer = NULL;
     int *_array = NULL;
 
@@ -237,8 +244,7 @@ bool hwc_manage_ref_cache(bool cache, hwc_dispc_data_t *dispc_data)
     }
     ion_cache->num_used = size;
     ion_cache->sync_count = dispc_data->sync_count;
-    
+
 manage_ok:
     return  1;
 }
-

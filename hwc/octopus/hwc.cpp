@@ -54,6 +54,11 @@ static int hwc_blank(struct hwc_composer_device_1* dev, int disp, int blank)
     HWC_UNREFERENCED_PARAMETER(blank);
 
 	SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
+	if(!blank)
+     {
+               Globctx->unblank_flag = 1;
+               return 0;
+     }
 	unsigned long               arg[4]={0};
     DisplayInfo   *PsDisplayInfo = &Globctx->SunxiDisplay[disp];
     if(PsDisplayInfo->VirtualToHWDisplay !=  -EINVAL)

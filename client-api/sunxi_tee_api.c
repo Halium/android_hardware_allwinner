@@ -48,6 +48,7 @@ TEEC_Result TEEC_InitializeContext(const char* name, TEEC_Context* context) {
 		context->fd = ret;
 		context->session_count = 0;
 		context->shared_mem_cnt = 0;
+		context->nSessionNum   = 0;
 		INIT_LIST_HEAD(&context->shared_mem_list);
 	}
 	return TEEC_SUCCESS;
@@ -325,7 +326,7 @@ TEEC_Result TEEC_InvokeCommand(
 					(param_types[param_count] == TEEC_MEMREF_PARTIAL_INPUT) ||
 					(param_types[param_count] == TEEC_MEMREF_PARTIAL_INOUT) ||
 					(param_types[param_count] == TEEC_MEMREF_PARTIAL_OUTPUT)) {
-
+				//* check the info
 				if(!operation->params[param_count].memref.parent) {
 					if(returnOrigin){
 						*returnOrigin = TEEC_ORIGIN_API;
@@ -393,41 +394,44 @@ TEEC_Result TEEC_InvokeCommand(
 						break;
 					}
 				}
+				//* assign sunxi_tee_param from operation->param
 				if (param_types[param_count] == TEEC_MEMREF_PARTIAL_INPUT) {
 
 					sunxi_tee_param[param_count].type = TE_PARAM_TYPE_MEM_RO;
-					sunxi_tee_param[param_count].u.Mem.base = (void*) ((uint32_t)operation->params[param_count].memref.parent->buffer +
+					sunxi_tee_param[param_count].u.Mem.base = (void*) ((uintptr_t)operation->params[param_count].memref.parent->buffer +
 							(uint32_t)operation->params[param_count].memref.offset);
 					sunxi_tee_param[param_count].u.Mem.len = operation->params[param_count].memref.parent->size;
-					sunxi_tee_param[param_count].index = (uint32_t)operation->params[param_count].memref.parent->buffer;
+					sunxi_tee_param[param_count].index = (uintptr_t)operation->params[param_count].memref.parent->buffer;
 				}else if((param_types[param_count] == TEEC_MEMREF_PARTIAL_OUTPUT) ||
 						(param_types[param_count] == TEEC_MEMREF_PARTIAL_INOUT)){
 
 					sunxi_tee_param[param_count].type = TE_PARAM_TYPE_MEM_RW;
-					sunxi_tee_param[param_count].u.Mem.base = (void*) ((uint32_t)operation->params[param_count].memref.parent->buffer +
+					sunxi_tee_param[param_count].u.Mem.base = (void*) ((uintptr_t)operation->params[param_count].memref.parent->buffer +
 							(uint32_t)operation->params[param_count].memref.offset);
 					sunxi_tee_param[param_count].u.Mem.len = operation->params[param_count].memref.parent->size;
-					sunxi_tee_param[param_count].index = (uint32_t)operation->params[param_count].memref.parent->buffer;
+					sunxi_tee_param[param_count].index = (uintptr_t)operation->params[param_count].memref.parent->buffer;
 
 				}else if((param_types[param_count] == TEEC_MEMREF_WHOLE)){
 					if(operation->params[param_count].memref.parent->flags == TEEC_MEM_INPUT){
 						sunxi_tee_param[param_count].type = TE_PARAM_TYPE_MEM_RO;
-						sunxi_tee_param[param_count].u.Mem.base = (void*) ((uint32_t)operation->params[param_count].memref.parent->buffer);
+						sunxi_tee_param[param_count].u.Mem.base = (void*) ((uintptr_t)operation->params[param_count].memref.parent->buffer);
 						sunxi_tee_param[param_count].u.Mem.len = operation->params[param_count].memref.parent->size;
-						sunxi_tee_param[param_count].index = (uint32_t)operation->params[param_count].memref.parent->buffer;
+						sunxi_tee_param[param_count].index = (uintptr_t)operation->params[param_count].memref.parent->buffer;
 					}
 					if((operation->params[param_count].memref.parent->flags == TEEC_MEM_OUTPUT) ||
 							(operation->params[param_count].memref.parent->flags == (TEEC_MEM_INPUT|TEEC_MEM_OUTPUT ))){
 						sunxi_tee_param[param_count].type = TE_PARAM_TYPE_MEM_RW;
-						sunxi_tee_param[param_count].u.Mem.base = (void*) ((uint32_t)operation->params[param_count].memref.parent->buffer);
+						sunxi_tee_param[param_count].u.Mem.base = (void*) ((uintptr_t)operation->params[param_count].memref.parent->buffer);
 						sunxi_tee_param[param_count].u.Mem.len = operation->params[param_count].memref.parent->size;
-						sunxi_tee_param[param_count].index = (uint32_t)operation->params[param_count].memref.parent->buffer;
+						sunxi_tee_param[param_count].index = (uintptr_t)operation->params[param_count].memref.parent->buffer;
 					}
 				}
 			}else if(param_types[param_count] == TEEC_NONE){
 				sunxi_tee_param[param_count].type = TE_PARAM_TYPE_NONE;
 			}
 		}
+
+		//* set sunxi_tee_param to cmd
 		for (param_count = 0; param_count < 4; param_count++) {
 			if (cmd->launchop.operation.list_count == 0) {
 				cmd->launchop.operation.list_head = sunxi_tee_param + param_count;

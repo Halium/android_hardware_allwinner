@@ -174,6 +174,7 @@ typedef struct {
     int                 share_fd;//ion_handle share_fd
     int                 size_buffer;
     bool                valid;
+    bool                is_secure;
 }hwc_cache_t;
 
 typedef struct {
@@ -191,6 +192,7 @@ typedef struct {
     int                 share_fd;
     bool                needsync;//for sw_write
     bool                iscursor;
+    bool                is_secure;
     disp_layer_config   hwc_layer_info;
 }hwc_commit_layer_t;
 
@@ -255,6 +257,7 @@ typedef struct layer_info {
     bool            is3D;
     bool            is_cursor;
     bool            need_sync;
+    bool            is_secure;
     int             shared_fd;
     AssignDUETO_T   info;
     hwc_layer_1_t   *psLayer;
@@ -407,7 +410,7 @@ typedef struct
     mutable android::Condition   CommitCondition;
 
     hwc_commit_layer_t cursor_rotate_layer[VIDEO_ROTATE_COUNT];// 0 is 90, 1 is 180,2 is 270;
-
+    int					unblank_flag;
 }SUNXI_hwcdev_context_t;
 
 typedef struct 

@@ -237,6 +237,8 @@ struct TEEC_Context
 	struct list shared_mem_list;
 /*! Error number from the client driver */
 	int s_errno;
+
+	int nSessionNum;
 };
 
 

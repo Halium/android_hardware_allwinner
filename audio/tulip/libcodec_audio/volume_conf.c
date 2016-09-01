@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #define LOG_TAG "codec_audio"
 #define LOG_NDEBUG 0

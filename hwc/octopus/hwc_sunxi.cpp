@@ -443,8 +443,8 @@ static inline int check_valid_format(int format)
     case HAL_PIXEL_FORMAT_RGB_888:
     case HAL_PIXEL_FORMAT_RGB_565:
     case HAL_PIXEL_FORMAT_BGRA_8888:
-    case HAL_PIXEL_FORMAT_sRGB_A_8888:
-    case HAL_PIXEL_FORMAT_sRGB_X_8888:
+    // case HAL_PIXEL_FORMAT_sRGB_A_8888:
+    // case HAL_PIXEL_FORMAT_sRGB_X_8888:
     case HAL_PIXEL_FORMAT_YV12:
 	case HAL_PIXEL_FORMAT_YCrCb_420_SP:
     case HAL_PIXEL_FORMAT_BGRX_8888:
@@ -520,8 +520,8 @@ static inline bool check_support_blending(int format)
         case HAL_PIXEL_FORMAT_RGB_888:
         case HAL_PIXEL_FORMAT_RGB_565:
         case HAL_PIXEL_FORMAT_BGRA_8888:
-        case HAL_PIXEL_FORMAT_sRGB_A_8888:
-        case HAL_PIXEL_FORMAT_sRGB_X_8888:
+        // case HAL_PIXEL_FORMAT_sRGB_A_8888:
+        // case HAL_PIXEL_FORMAT_sRGB_X_8888:
         case HAL_PIXEL_FORMAT_BGRX_8888:
             return 1;
         default:
@@ -764,7 +764,7 @@ static int hwc_can_scale(HwcDisContext_t *Localctx, hwc_layer_1_t *psLayer, bool
     {
         vsyncPeroid /= 2;
     }
-    de_freq = 504000000;
+    de_freq = 254000000;
 	lcd_line_peroid = vsyncPeroid / lcd_h;
     layer_line_peroid = (src_w > dst_w)
             ? (1000000*((long long)(lcd_w - dst_w + src_w))/(de_freq/1000))
@@ -1395,7 +1395,7 @@ ret_ok:
 HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout, int zOrder)
 {
 
-    bool needchannel = 1, isvideo = 0, isalpha = 0, isFB = 0;
+    bool needchannel = 1, isvideo = 0, isalpha = 0, isFB = 0, issecure = 0;
     bool is3D = 0, need_sync = 0, is_cursor = 0;
     float WscalFac = 1.0, HscaleFac = 1.0;
     int CH= -1, tmCnt1 = 0, tmCnt2 = 0, addLayerCnt = 1;
@@ -1444,13 +1444,18 @@ HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout,
 	    goto assign_gpu;
     }
     
-	if(check_usage_protected(handle) && !PsDisplayInfo->issecure)
+	if(check_usage_protected(handle))
 	{
-        ALOGV("%s:Video Protected", __func__);
-        dueto = D_VIDEO_PD;
-	    goto assign_gpu;
+        if(!PsDisplayInfo->issecure)
+        {
+            ALOGV("%s:Video Protected", __func__);
+            dueto = D_VIDEO_PD;
+	        goto assign_gpu;
+        }else{
+            issecure = 1;
+        }
 	}
-
+    
     dueto = check_valid_layer(psLayer, is_cursor);
     if(dueto != I_OVERLAY)
     {
@@ -1643,8 +1648,9 @@ assign_overlay:
     Localctx->psAllLayer[singcout].is3D = is3D;
     Localctx->psAllLayer[singcout].info = dueto;
     Localctx->psAllLayer[singcout].isvideo= isvideo;
-    Localctx->psAllLayer[singcout].need_sync = need_sync;
-    Localctx->psAllLayer[singcout].is_cursor= is_cursor;
+    Localctx->psAllLayer[singcout].need_sync = issecure?0:need_sync;
+    Localctx->psAllLayer[singcout].is_cursor = is_cursor;
+    Localctx->psAllLayer[singcout].is_secure = issecure;
     if(is_cursor)
     {
         return ASSIGN_CURSOR;
@@ -1734,6 +1740,7 @@ int hwc_setup_layer(hwc_dispc_data_t *DisplayData, HwcDisContext_t *Localctx)
             }
             hw_layer_config->needsync = psHwlayer_info->need_sync;
             hw_layer_config->share_fd = dup(psHwlayer_info->shared_fd);
+            hw_layer_config->is_secure = psHwlayer_info->is_secure;
             if(check_is_blending(psLayer))
             {
                 layer_info->alpha_mode = 2;
@@ -2054,6 +2061,9 @@ deal_fence:
             && PsDisplayInfo->VirtualToHWDisplay >= 0)
         {
             releasefecefd = returnfenceFd[ture_disp];
+        }else{
+            ALOGW("has plugout the disp[%d]",disp);
+            continue;
         }
 		for(i = 0; i < psDisplay->numHwLayers; i++)
 		{
@@ -2378,7 +2388,7 @@ SUNXI_hwcdev_context_t* hwc_create_device(void)
 		ALOGD("###open /sys/class/disp/disp/attr/runtime_enable fail");
 	}
 
-    open_fd = open("/sys/devices/platform/sunxi-ddrfreq/devfreq/sunxi-ddrfreq/max_freq", O_RDONLY);
+    open_fd = open("/sys/class/devfreq/sunxi-ddrfreq/max_freq", O_RDONLY);
     if(open_fd >= 0)
     {
         char val_ddr[10] = {0x0,};
@@ -2427,6 +2437,7 @@ SUNXI_hwcdev_context_t* hwc_create_device(void)
     Globctx->uiBeginFrame = 0;
     Globctx->hwcdebug = 0;
     Globctx->stop_rotate_hw = 0;
+    Globctx->unblank_flag = 0;
     Globctx->ManageLock = PTHREAD_MUTEX_INITIALIZER;
     Globctx->AbandonLock = PTHREAD_MUTEX_INITIALIZER;
     Globctx->HeadLock = PTHREAD_MUTEX_INITIALIZER;

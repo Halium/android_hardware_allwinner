@@ -178,6 +178,7 @@ static bool reset_globle(SUNXI_hwcdev_context_t *Globctx,
     Globctx->currentmem = 0;
     Globctx->has_tr_mem = 0;
     Globctx->has_tr_cnt = 0;
+    Globctx->has_secure = 0;
     int tmp_mem_thruput0 = 0;
     int all_mem_diff = 0, all_mem = 0, all_mem_fb = 0, ture_disp;
     for(i = 0; i < (int)NumofDisp && i < Globctx->NumberofDisp; i++)
@@ -924,24 +925,6 @@ static bool resize_layer(HwcDisContext_t *Localctx,
 	    layer_info->fb.crop.y = fb_crop->top + ((cut_top == 1) ? cut_mod:0);
 		layer_info->fb.crop.height = srcdiff - cut_mod;
     }
-
-#if defined(HWC_DEBUG)
-        ALOGD("\nold:\n[%f,%f]#S[%lld,%lld,%lld,%lld] F[%lld,%lld,%lld,%lld]\n",
-            Localctx->WidthScaleFactor, Localctx->HighetScaleFactor,
-            layer_info->fb.crop.x, layer_info->fb.crop.y, layer_info->fb.crop.width,
-            layer_info->fb.crop.height, layer_info->screen_win.x, layer_info->screen_win.y,
-            layer_info->screen_win.width, layer_info->screen_win.height);
-#endif
-
-    if(gSunxiHwcDevice.SunxiDisplay[0].DisplayType == DISP_OUTPUT_TYPE_HDMI) {
-	    layer_info->fb.crop.x = (long long)(((long long)(psLayer->sourceCrop.left)) << 32);
-	    layer_info->fb.crop.width = (long long)(((long long)(psLayer->sourceCrop.right)) << 32);
-	    layer_info->fb.crop.width -= layer_info->fb.crop.x;
-	    layer_info->fb.crop.y = (long long)(((long long)(psLayer->sourceCrop.top)) << 32);
-	    layer_info->fb.crop.height = (long long)(((long long)(psLayer->sourceCrop.bottom)) << 32);
-	    layer_info->fb.crop.height -= layer_info->fb.crop.y;
-    }
-
     if(layer_info->b_trd_out == 1)
     {
         switch(PsDisplayInfo->Current3DMode)
@@ -1045,7 +1028,7 @@ ret_ok:
 HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout, int zOrder)
 {
 
-    bool needchannel = 1, isvideo = 0, isalpha = 0, isFB = 0, has_tr = 0;
+    bool needchannel = 1, isvideo = 0, isalpha = 0, isFB = 0, has_tr = 0, issecure = 0;
     bool is3D = 0, need_sync = 0, is_cursor = 0;
     float WscalFac = 1.0, HscaleFac = 1.0;
     int CH= -1, tmCnt1 = 0, tmCnt2 = 0, addLayerCnt = 1;
@@ -1095,11 +1078,16 @@ HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout,
 	    goto assign_gpu;
     }
     
-	if(check_usage_protected(handle) && !PsDisplayInfo->issecure)
+	if(check_usage_protected(handle))
 	{
-        ALOGV("%s:Video Protected", __func__);
-        dueto = D_VIDEO_PD;
-	    goto assign_gpu;
+	    if(!PsDisplayInfo->issecure)
+        {
+            ALOGV("%s:Video Protected", __func__);
+            dueto = D_VIDEO_PD;
+            goto assign_gpu;
+        }else{
+            issecure = 1;
+        }
 	}
 
     dueto = check_valid_layer(psLayer);
@@ -1239,7 +1227,7 @@ needchannel:
         }
     }
     /*check the mem thruput*/
-    if(!is_cursor)
+    if(!is_cursor && (Globctx->has_secure == 0))
     {
         dueto = calculate_memthruput(Localctx, &Localctx->psAllLayer[singcout],
                     WscalFac, HscaleFac, Localctx->HwCHUsedCnt - CHdiff, isFB, isvideo);
@@ -1274,7 +1262,7 @@ needchannel:
     if(!Localctx->force_gpu
         && (Localctx->UsedFB? isFB: ((int)singcout == Localctx->numberofLayer - 2)))
     {
-        if(mem_ctrl_power_policy(Globctx, Localctx))
+        if(mem_ctrl_power_policy(Globctx, Localctx) && (Globctx->has_secure == 0))
         {
             Localctx->force_gpu = 1;
             goto assigned_need_resigne;
@@ -1293,6 +1281,7 @@ assign_overlay:
     Globctx->has_tr_cnt += has_tr;
     Localctx->tr_mem += has_tr ? (handle->width * handle->height) : 0;
     Globctx->has_tr_mem += has_tr ? (handle->width * handle->height) : 0;
+    Globctx->has_secure += issecure;
 
     psCH[Localctx->HwCHUsedCnt - CHdiff].hasVideo = isvideo;
     psCH[Localctx->HwCHUsedCnt - CHdiff].iCHFormat =
@@ -1315,8 +1304,9 @@ assign_overlay:
     Localctx->psAllLayer[singcout].is3D = is3D;
     Localctx->psAllLayer[singcout].info = dueto;
     Localctx->psAllLayer[singcout].isvideo = isvideo;
-    Localctx->psAllLayer[singcout].need_sync = need_sync;
+    Localctx->psAllLayer[singcout].need_sync = issecure?0:need_sync;
     Localctx->psAllLayer[singcout].is_cursor = is_cursor;
+    Localctx->psAllLayer[singcout].is_secure = issecure;
     if(is_cursor)
     {
         return ASSIGN_CURSOR;
@@ -1360,7 +1350,6 @@ int hwc_setup_layer(hwc_dispc_data_t *DisplayData, HwcDisContext_t *Localctx)
     const DisplayInfo *PsDisplayInfo = Localctx->psDisplayInfo;
     ChannelInfo_t *psChannelInfo = Localctx->ChannelInfo;
     struct private_handle_t *handle = NULL;
-    bool enableLayer = !(PsDisplayInfo->setblank);
 
     ture_disp = PsDisplayInfo->VirtualToHWDisplay;
     if(ture_disp < 0 || ture_disp >= NUMBEROFDISPLAY)
@@ -1413,6 +1402,7 @@ int hwc_setup_layer(hwc_dispc_data_t *DisplayData, HwcDisContext_t *Localctx)
             }
             hw_layer_config->needsync = psHwlayer_info->need_sync;
             hw_layer_config->share_fd = dup(psHwlayer_info->shared_fd);
+            hw_layer_config->is_secure = psHwlayer_info->is_secure;
             if(check_is_blending(psLayer))
             {
                 layer_info->alpha_mode = 2;
@@ -1430,7 +1420,7 @@ int hwc_setup_layer(hwc_dispc_data_t *DisplayData, HwcDisContext_t *Localctx)
             layer_info->zorder = zOrder;
             layer_info->alpha_value = psChannelInfo[CHCnt].planeAlpha;
 
-            psDisconfig->enable = enableLayer;
+            psDisconfig->enable = 1;
             psDisconfig->layer_id = LCnt;
             psDisconfig->channel = psChannelInfo[CHCnt].hasVideo ? VideoCnt : UiCnt;
             psHwlayer_info->hwchannel = psDisconfig->channel;
@@ -2033,11 +2023,10 @@ SUNXI_hwcdev_context_t* hwc_create_device(void)
                 && Globctx->SunxiDisplay[1].VirtualToHWDisplay == -EINVAL)
             {
                 hwc_hotplug_switch(1, 1, DISP_TV_MODE_NUM);
-                ALOGD("### init hdmi_plug: IN ###");
             }
+            ALOGD("### init hdmi_plug: IN ###");
         }else{
-            if(Globctx->SunxiDisplay[0].DisplayType != DISP_OUTPUT_TYPE_HDMI)
-                ALOGD("### init hdmi_plug: OUT ###");
+            ALOGD("### init hdmi_plug: OUT ###");
         }
         close(open_fd);
     }else{
@@ -2119,7 +2108,8 @@ SUNXI_hwcdev_context_t* hwc_create_device(void)
     Globctx->layer_st = -1;
     Globctx->fBeginTime = 0.0;
     Globctx->uiBeginFrame = 0;
-	Globctx->unblank_flag = 0;
+    Globctx->unblank_flag = 0;
+    Globctx->has_secure = 0;
 
     hwc_list_init(&Globctx->rotate_cache_list);
     Globctx->rotate_hold_cnt = 0;

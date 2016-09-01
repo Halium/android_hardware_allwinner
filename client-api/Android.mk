@@ -1,6 +1,8 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
+ifeq ($(SECURE_OS_OPTEE), no)
+
 LOCAL_SRC_FILES:= \
 	sunxi_tee_api.c
 
@@ -29,3 +31,5 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE:= test_api
 
 #include $(BUILD_EXECUTABLE)
+
+endif

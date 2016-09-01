@@ -98,7 +98,7 @@ int culate_timeout(disp_rectsz disp_src)
     return 32;
 }
 
-static hwc_cache_t *hwc_video_cache_get(int size, int fd, unsigned int sync_count)
+static hwc_cache_t *hwc_video_cache_get(int size, int fd, unsigned int sync_count, bool is_secure)
 {
     SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
     hwc_cache_t *wb_cache = NULL;
@@ -130,7 +130,7 @@ static hwc_cache_t *hwc_video_cache_get(int size, int fd, unsigned int sync_coun
         close(wb_cache->fd);
         wb_cache->fd = -1;
     }
-    if(wb_cache->share_fd >= 0 && size < wb_cache->size_buffer)
+    if(wb_cache->share_fd >= 0 && size < wb_cache->size_buffer && wb_cache->is_secure == is_secure)
     {
         if(wb_cache->size_buffer - size > 4096)
         {
@@ -148,23 +148,38 @@ static hwc_cache_t *hwc_video_cache_get(int size, int fd, unsigned int sync_coun
     }
     if(wb_cache->share_fd == -1 || wb_cache->size_buffer == 0)
     {
-        ret = ion_alloc_fd(Globctx->IonFd, size,
-                4096, ION_HEAP_TYPE_DMA_MASK, 0, &wb_cache->share_fd);
-        if(ret < 0)
+        if(is_secure)
         {
-            ALOGD("alloc err from ION_HEAP_CARVEOUT_MASK");
-            ret =  ion_alloc_fd(Globctx->IonFd, size,
-                    4096, ION_HEAP_SYSTEM_CONTIG_MASK, 0, &wb_cache->share_fd);
+            ret = ion_alloc_fd(Globctx->IonFd, size,
+                4096,  ION_HEAP_SECURE_MASK, 0, &wb_cache->share_fd);
             if(ret < 0)
             {
-                ALOGD("alloc err from ION_HEAP_SYSTEM_CONTIG_MASK");
-                wb_cache->share_fd = -1;
-                wb_cache->size_buffer = 0;
-                return NULL;
+                 ALOGD("alloc err from ION_HEAP_SECURE_MASK");
+                 return NULL;
+            }
+            wb_cache->is_secure = 1;
+        }else{
+            ret = ion_alloc_fd(Globctx->IonFd, size,
+                4096, ION_HEAP_TYPE_DMA_MASK, 0, &wb_cache->share_fd);
+            if(ret < 0)
+            {
+                ALOGD("alloc err from ION_HEAP_CARVEOUT_MASK");
+                ret =  ion_alloc_fd(Globctx->IonFd, size,
+                    4096, ION_HEAP_SYSTEM_CONTIG_MASK, 0, &wb_cache->share_fd);
+                if(ret < 0)
+                {
+                    ALOGD("alloc err from ION_HEAP_SYSTEM_CONTIG_MASK");
+                    wb_cache->share_fd = -1;
+                    wb_cache->size_buffer = 0;
+                    return NULL;
+                }
             }
         }
-        ion_sync_fd(Globctx->IonFd, wb_cache->share_fd);
-        wb_cache->size_buffer = size;
+	if(!is_secure)
+	{
+        	ion_sync_fd(Globctx->IonFd, wb_cache->share_fd);
+        }
+	wb_cache->size_buffer = size;
     }
     wb_cache->sync_cnt = sync_count;
     wb_cache->valid = 0;
@@ -520,7 +535,7 @@ bool hwc_rotate_layer_video(hwc_dispc_data_t *hwc_layer,
         hwc_rotate_settimeout(ret);
         Globctx->tr_time_out = ret;
     }
-    wb_cache = hwc_video_cache_get(size, commit_data->releasefencefd[disp], hwc_layer->sync_count);
+    wb_cache = hwc_video_cache_get(size, commit_data->releasefencefd[disp], hwc_layer->sync_count, commit_layer->is_secure);
     if(wb_cache != NULL)
     {
         memset(&tr_info, 0, sizeof(tr_info));

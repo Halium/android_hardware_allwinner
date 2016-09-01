@@ -95,6 +95,7 @@
     <ctl name="AIF1OUT0R Mux" value="AIF1_AD0R" />
     <ctl name="AIF1 AD0L Mixer ADCL Switch" value="1" />
     <ctl name="AIF1 AD0R Mixer ADCR Switch" value="1" />
+    <ctl name="ADC volume" value="192" />
     <ctl name="ADCR Mux" value="DMIC" />
     <ctl name="ADCL Mux" value="DMIC" />
   </path>
@@ -104,7 +105,8 @@
     <ctl name="RIGHT ADC input Mixer MIC2 boost Switch" value="1" />
     <ctl name="LEFT ADC input Mixer MIC2 boost Switch" value="1" />
     <ctl name="MIC2 SRC" value="MIC2" />
-    <ctl name="MIC2 boost amplifier gain" value="4" />
+    <ctl name="ADC volume" value="160" />
+    <ctl name="MIC2 boost amplifier gain" value="3" />
   </path>
 
   <!-- dbb phone path -->
