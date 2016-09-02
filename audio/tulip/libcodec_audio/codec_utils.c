@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <utils/Log.h>
 #include <cutils/properties.h>
 
@@ -66,8 +67,8 @@ struct pcm_config codec_out_config =
 	.rate = 44100,
 	.period_size = 1024,
 	.period_count = 4,
-	.format = PCM_FORMAT_S16_LE, 
-	.start_threshold = 0,        
+	.format = PCM_FORMAT_S16_LE,
+	.start_threshold = 0,
 	.stop_threshold = 0,
 	.silence_threshold = 0,
 
@@ -77,40 +78,96 @@ struct pcm_config codec_in_config =
 {
 	.channels = 1,
 	.rate = 44100,
-	.period_size = 1024,          
-	.period_count = 4,           
-	.format = PCM_FORMAT_S16_LE, 
-	.start_threshold = 0,        
+	.period_size = 1024,
+	.period_count = 4,
+	.format = PCM_FORMAT_S16_LE,
+	.start_threshold = 0,
 	.stop_threshold = 0,
-	.silence_threshold = 0,  
+	.silence_threshold = 0,
 };
 
 char *audio_dev_name[3]={"audiocodec","sndpcm", "sndi2s"} ;
 
-int init_stream(struct dev_stream *dev_stream) 
+static int pcm_get_node_number(char *name)
+{
+	char card[32];
+	char id[32];
+	int i = 0;
+	int j = 0;
+	int fd = 0;
+	int ret = 0;
+
+	for(i = 0; i < 10; i++){
+		memset(card, 0, 32);
+		memset(id, 0, 32);
+
+		/* "/sys/class/sound/cardx" */
+		sprintf(card, "/sys/class/sound/card%d", i);
+		ret = access(card, F_OK);
+		if(ret != 0){
+			continue;
+		}
+
+		/* "/sys/class/sound/cardx/id" */
+		strcat(card, "/id");
+		ret = access(card, F_OK);
+		if(ret != 0){
+			continue;
+		}
+
+		/* compare */
+		fd = open(card, O_RDONLY);
+		if(fd < 0){
+			continue;
+		}
+
+		ret = read(fd, id, 32);
+		if(ret < 0){
+			close(fd);
+			continue;
+		}
+
+		/* ?????��? */
+		for(j = 0; j < 32; j++){
+			if(id[j] == 0x0a){
+		            id[j] = 0;
+			}
+		}
+
+		if(!strcmp(id, name)){
+			close(fd);
+			return i;
+		}
+
+		close(fd);
+	}
+	return -1;
+}
+
+int init_stream(struct dev_stream *dev_stream)
 {
 	enum device_type dev_type = CARD_UNKNOWN;
 	int dev_direction =0;
 	int dev_node = -1;
 
 	switch (dev_stream->type){
-		case BT: 
+		case BT:
 			dev_type = CARD_PCM;
 			break;
-		case BT_FM: 
+		case BT_FM:
 			dev_type = CARD_PCM;
 			break;
 		case BP:
 			dev_type = CARD_I2S;
-			break;	
+			break;
 		case FM:
 			dev_type = CARD_I2S;
 			break;
 		case CODEC:
 			dev_type = CARD_CODEC;
-			break;	
+			break;
 		default:
-			dev_type = CARD_UNKNOWN;				
+			dev_type = CARD_UNKNOWN;
 	};
 
 	if(dev_type == CARD_UNKNOWN){
@@ -144,24 +201,24 @@ ALOGD("huangxin------------dev_node:%d", dev_node);
 	}
 	memset(dev_stream->buf, 0, dev_stream->buf_size);
 
-	ALOGD("dev_stream dev node =%d, type=%d, direction:%s, buf size:%d", 
+	ALOGD("dev_stream dev node =%d, type=%d, direction:%s, buf size:%d",
 			dev_node, dev_stream->type, dev_stream->direction == SENDER ? "PCM_IN" : "PCM_OUT", pcm_get_buffer_size(dev_stream->dev));
 
     	return 0;
 malloc_failed:
 	if (dev_stream->dev){
-		pcm_close(dev_stream->dev);	
+		pcm_close(dev_stream->dev);
 	}
 
 open_failed:
     	return -1;
 }
 
-void close_stream(struct dev_stream *dev_stream) 
+void close_stream(struct dev_stream *dev_stream)
 {
 
 	if (dev_stream->buf){
-		free(dev_stream->buf);	
+		free(dev_stream->buf);
 	}
 
 	if (dev_stream->dev){
@@ -180,7 +237,7 @@ void ReduceVolume(char *buf, int size, int repeat)
 
         if(!size){
                 return;
-        }   
+        }
 
 	zhen_shu = size - size%2;
 
@@ -189,16 +246,16 @@ void ReduceVolume(char *buf, int size, int repeat)
                 hight = buf[i+1];
                 data = low | (hight << 8);
                 for(j=0; j< repeat; j++){
-                        data = data / 1.25;    
+                        data = data / 1.25;
                         if(data < minData){
-                                data = minData; 
+                                data = minData;
                         } else if (data > 0x7fff){
                                 data = maxData;
                         }
-                }   
+                }
                 buf[i] = (data) & 0x00ff;
                 buf[i+1] = ((data)>>8) & 0xff;
-        } 
+        }
 }
 
 
@@ -415,8 +472,8 @@ int get_mixer(struct mixer_ctls *mixer_ctls)
     if (!mixer_ctls->dac_right_chan_mixer_gain_ctrl) {
 	    ALOGE("Unable to find '%s' mixer control", MIXER_AUDIO_DAC_MXR_GAIN_R);
 		goto error_out;
-    }    
-    
+    }
+
     mixer_ctls->mic1_boost_amp_gain_ctrl = mixer_get_ctl_by_name(mixer,
 		    MIXER_AUDIO_ADC_SRCBST_CTRL_MIC1G);
     if (!mixer_ctls->mic1_boost_amp_gain_ctrl) {
@@ -498,7 +555,7 @@ int get_mixer(struct mixer_ctls *mixer_ctls)
 	    ALOGE("Unable to find '%s' mixer control", MIXER_AUDIO_LINE_OUT_GAIN_CTRL);
 		goto error_out;
     }
-    
+
     mixer_ctls->audio_phone_out = mixer_get_ctl_by_name(mixer,
 		    MIXER_AUDIO_PHONE_OUT);
     if (!mixer_ctls->audio_phone_out) {
@@ -597,7 +654,7 @@ int get_mixer(struct mixer_ctls *mixer_ctls)
 	    ALOGE("Unable to find '%s' mixer control",MIXER_AUDIO_LINEIN_IN);
 	    goto error_out;
     }
-   
+
     mixer_ctls->audio_noise_adcin_reduced = mixer_get_ctl_by_name(mixer,
 		    MIXER_AUDIO_NOISE_ADCIN_REDUCED);
     if (!mixer_ctls->audio_noise_adcin_reduced) {
@@ -757,11 +814,8 @@ int get_mixer(struct mixer_ctls *mixer_ctls)
 
     return 0;
 
-error_out:  
+error_out:
 	ALOGE("HUANGXIN--------------------MIXER_CLOSE ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     mixer_close(mixer);
     return -1;
 }
-
-
-

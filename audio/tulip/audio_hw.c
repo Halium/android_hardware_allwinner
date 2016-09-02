@@ -17,6 +17,10 @@
 #define LOG_TAG "audio_hw_primary"
 #define LOG_NDEBUG 0
 
+#define AUDIO_DEVICE_IN_AF (AUDIO_DEVICE_BIT_IN | 0x1000000)
+#define AUDIO_MODE_MODE_FACTORY_TEST 4
+#define AUDIO_MODE_FM 5
+
 #include <errno.h>
 #include <pthread.h>
 #include <stdint.h>
