@@ -21,7 +21,8 @@ typedef struct {
     ion_user_handle_t handle;
     unsigned int phys_addr;
     unsigned int size;
-}sunxi_phys_data;
+} sunxi_phys_data;
+
 #define ION_IOC_SUNXI_PHYS_ADDR     7
 
 ion_user_handle_t ion_alloc_buffer(int iAllocBytes, unsigned int heap_mask)

@@ -15,9 +15,6 @@
  */
 #include "hwc.h"
 
-#define ION_HEAP_TYPE_SECURE    (ION_HEAP_TYPE_CUSTOM+1)
-#define ION_HEAP_SECURE_MASK		(1 << ION_HEAP_TYPE_SECURE)
-
 int hwc_rotate_query(unsigned long tr_handle)
 {
     SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
@@ -132,7 +129,7 @@ static rotate_cache_t *hwc_ratate_cache_manage(SUNXI_hwcdev_context_t *Globctx, 
     return ratate_cache;
 }
 
-static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int fd, unsigned int sync_count, bool is_secure)
+static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int fd, unsigned int sync_count)
 {
     SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
     hwc_cache_t *tr_cache = NULL;
@@ -166,7 +163,7 @@ static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int
         close(tr_cache->fd);
         tr_cache->fd = -1;
     }
-    if(tr_cache->share_fd >= 0 && size <= tr_cache->size_buffer && tr_cache->is_secure == is_secure)
+    if(tr_cache->share_fd >= 0 && size <= tr_cache->size_buffer)
     {
         if(tr_cache->size_buffer - size > 4096)
         {
@@ -184,35 +181,22 @@ static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int
     }
     if(tr_cache->share_fd == -1 || tr_cache->size_buffer == 0)
     {
-		if(is_secure){
-			ret = ion_alloc_fd(Globctx->IonFd, size,
-                4096,  ION_HEAP_SECURE_MASK, 0, &tr_cache->share_fd);
+        ret = ion_alloc_fd(Globctx->IonFd, size,
+                4096, ION_HEAP_TYPE_DMA_MASK, 0, &tr_cache->share_fd);
+        if(ret < 0)
+        {
+            ALOGD("alloc err from ION_HEAP_TYPE_DMA_MASK");
+            ret =  ion_alloc_fd(Globctx->IonFd, size,
+                    4096, ION_HEAP_SYSTEM_CONTIG_MASK, 0, &tr_cache->share_fd);
             if(ret < 0)
             {
-                 ALOGD("alloc err from ION_HEAP_SECURE_MASK");
-                 return NULL;
+                ALOGD("alloc err from ION_HEAP_SYSTEM_CONTIG_MASK");
+                tr_cache->share_fd = -1;
+                tr_cache->size_buffer = 0;
+                return NULL;
             }
-            tr_cache->is_secure = 1;
-		}else{
-			ret = ion_alloc_fd(Globctx->IonFd, size,
-                4096, ION_HEAP_TYPE_DMA_MASK, 0, &tr_cache->share_fd);
-	        if(ret < 0)
-	        {
-	            ALOGD("alloc err from ION_HEAP_TYPE_DMA_MASK");
-	            ret =  ion_alloc_fd(Globctx->IonFd, size,
-	                    4096, ION_HEAP_SYSTEM_CONTIG_MASK, 0, &tr_cache->share_fd);
-	            if(ret < 0)
-	            {
-	                ALOGD("alloc err from ION_HEAP_SYSTEM_CONTIG_MASK");
-	                tr_cache->share_fd = -1;
-	                tr_cache->size_buffer = 0;
-	                return NULL;
-	            }
-	        }
-		}
-        if(!is_secure){
-        	ion_sync_fd(Globctx->IonFd, tr_cache->share_fd);
-		}
+        }
+        ion_sync_fd(Globctx->IonFd, tr_cache->share_fd);
         tr_cache->size_buffer = size;
     }
     tr_cache->sync_cnt = sync_count;
@@ -283,7 +267,7 @@ void hwc_rotate_cache_free(void)
 
 static int inline hwc_disp_pixel_bytes(disp_pixel_format format)
 {
-    switch(format)
+    switch(format) 
     {
         case DISP_FORMAT_YUV420_P:
 	    case DISP_FORMAT_YUV420_SP_VUVU:
@@ -301,13 +285,13 @@ static int inline hwc_disp_pixel_bytes(disp_pixel_format format)
             return 16;
         default:
             return 0;
-    }
+    } 
     return 0;
 }
 
 static inline int hwc_disp_layer_plan(disp_pixel_format format)
 {
-    switch(format)
+    switch(format) 
     {
         case DISP_FORMAT_YUV420_P:
             return 3;
@@ -324,7 +308,7 @@ static inline int hwc_disp_layer_plan(disp_pixel_format format)
             return 1;
         default:
             return 1;
-    }
+    } 
 }
 
 static inline disp_pixel_format tr_to_disp(tr_pixel_format tr_format)
@@ -489,9 +473,9 @@ bool hwc_layer_to_tr(disp_fb_info* hw_layer, tr_info *tr_info, hwc_cache_t *tr_b
     /*tr_info->dst_frame.laddr[2]  --> V*/
     if(cnt != 1)// is YUV Format
     {
-        tr_info->dst_frame.laddr[2] = tr_info->dst_frame.laddr[0] +
+        tr_info->dst_frame.laddr[2] = tr_info->dst_frame.laddr[0] + 
                 tr_info->dst_frame.pitch[0] * tr_info->dst_frame.height[0];
-        tr_info->dst_frame.laddr[1] = tr_info->dst_frame.laddr[2] +
+        tr_info->dst_frame.laddr[1] = tr_info->dst_frame.laddr[2] + 
                 tr_info->dst_frame.pitch[2] * tr_info->dst_frame.height[2];
     }
     return 1;
@@ -503,7 +487,7 @@ void hwc_resize_crop(disp_fb_info *hw_layer, int w_original, int h_original, tr_
     switch(mode)
     {
         case TR_HFLIP:
-            w_diff = hw_layer->size[0].width - w_original;
+            w_diff = hw_layer->size[0].width - w_original; 
             hw_layer->crop.x + (long long)(((long long)w_diff)<<32);
         break;
         case TR_VFLIP:
@@ -511,7 +495,7 @@ void hwc_resize_crop(disp_fb_info *hw_layer, int w_original, int h_original, tr_
             hw_layer->crop.y + (long long)(((long long)h_diff)<<32);
         break;
         case TR_ROT_90:
-            w_diff = hw_layer->size[0].width - h_original;
+            w_diff = hw_layer->size[0].width - h_original; 
             hw_layer->crop.x + (long long)(((long long)w_diff)<<32);
             h_diff = hw_layer->size[0].height - w_original;
             hw_layer->crop.y + (long long)(((long long)h_diff)<<32);
@@ -519,7 +503,7 @@ void hwc_resize_crop(disp_fb_info *hw_layer, int w_original, int h_original, tr_
         case TR_ROT_180:
             h_diff = hw_layer->size[0].height - h_original;
             hw_layer->crop.y + (long long)(((long long)h_diff)<<32);
-            w_diff = hw_layer->size[0].width - w_original;
+            w_diff = hw_layer->size[0].width - w_original; 
             hw_layer->crop.x + (long long)(((long long)w_diff)<<32);
         break;
         case TR_ROT_270:
@@ -596,7 +580,7 @@ bool hwc_tr_to_layer(disp_fb_info *hw_layer, tr_info *tr_info, hwc_cache_t *tr_b
         hw_layer->addr[0] = addr;
         if(hw_layer->format == DISP_FORMAT_YUV420_P)
         {
-            hw_layer->addr[2] = hw_layer->addr[0]
+            hw_layer->addr[2] = hw_layer->addr[0] 
                 + w_stride * h_stride ;
             hw_layer->addr[1] = hw_layer->addr[2]
                 + w_stride * h_stride / 4;
@@ -661,7 +645,7 @@ bool hwc_rotate_layer_tr(hwc_dispc_data_t *hwc_layer,
         goto translat_err;
     }
     tr_cache = hwc_tr_cache_get(rotate_cache, size,
-                commit_data->releasefencefd[disp], hwc_layer->sync_count,commit_layer->is_secure);
+                commit_data->releasefencefd[disp], hwc_layer->sync_count);
     if(tr_cache != NULL)
     {
         memset(&tr_info, 0, sizeof(tr_info));
@@ -736,5 +720,6 @@ translat_err:
     disp_layer->enable =0;
     ALOGE("######hwc get a rotate err#####");
     return 0;
-
+    
 }
+ 
