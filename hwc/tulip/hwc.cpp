@@ -93,12 +93,12 @@ static int hwc_setParameter(struct hwc_composer_device_1* dev, int cmd, int disp
 			break;
 		case DISPLAY_CMD_SETDISPLAYENHANCEDEMOMODE:
 			ret = _hwc_device_set_enhancemode(disp, para0, 1);
-			break;		    
+			break;
 		case DISPLAY_CMD_SETOUTPUTMODE:
 			ret = _hwc_device_set_output_mode(disp, para0, para1);
 			break;
         case DISPLAY_CMD_HDMIPERSENT:
-            
+
             ret = _hwc_set_persent(disp, para0, para1);
             break;
 		default:
@@ -149,13 +149,13 @@ static int hwc_eventControl(struct hwc_composer_device_1* dev, int disp,
     unsigned long               arg[4]={0};
 
     HWC_UNREFERENCED_PARAMETER(dev);
-    
+
     if(disp == 0)
     {
         DisplayInfo  *PsDisplayInfo = &Globctx->SunxiDisplay[disp];
         if(PsDisplayInfo->VirtualToHWDisplay != -EINVAL)
         {
-            switch (event) 
+            switch (event)
             {
                 case HWC_EVENT_VSYNC:
                     arg[0] = PsDisplayInfo->VirtualToHWDisplay;
@@ -192,7 +192,7 @@ static int hwc_getDisplayConfigs(struct hwc_composer_device_1 *dev,
     *numConfigs = 1;
     *configs = 0;
     return PsDisplayInfo->VirtualToHWDisplay == -EINVAL;
-        
+
 }
 
 static int32_t hwc_get_attribute(const uint32_t attribute,
@@ -204,9 +204,9 @@ static int32_t hwc_get_attribute(const uint32_t attribute,
     if(PsDisplayInfo->VirtualToHWDisplay != -EINVAL)
     {
 	    switch(attribute) {
-        case HWC_DISPLAY_VSYNC_PERIOD: 
+        case HWC_DISPLAY_VSYNC_PERIOD:
             return PsDisplayInfo->DisplayVsyncP;
-            
+
         case HWC_DISPLAY_WIDTH:
 #ifdef FORCE_SET_RESOLUTION
             return FORCE_RESOLUTION_WIDTH;
@@ -247,13 +247,13 @@ static int hwc_getDisplayAttributes(struct hwc_composer_device_1 *dev,
 {
     HWC_UNREFERENCED_PARAMETER(dev);
     HWC_UNREFERENCED_PARAMETER(config);
-    
-    for (int i = 0; attributes[i] != HWC_DISPLAY_NO_ATTRIBUTE; i++) 
+
+    for (int i = 0; attributes[i] != HWC_DISPLAY_NO_ATTRIBUTE; i++)
     {
         if (disp <=2)
         {
             values[i]=hwc_get_attribute(attributes[i],disp);
-            
+
         }else
         {
             ALOGE("unknown display type %u", disp);
@@ -312,12 +312,12 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
 	hwc_composer_device_1_t *psHwcDevice;
 	hw_device_t *psHwDevice;
 	int err = 0;
-	
-    if (strcmp(name, HWC_HARDWARE_COMPOSER)) 
+
+    if (strcmp(name, HWC_HARDWARE_COMPOSER))
     {
         return -EINVAL;
     }
-    
+
 	psHwcDevice = (hwc_composer_device_1_t *)malloc(sizeof(hwc_composer_device_1_t));
 	if(!psHwcDevice)
 	{
@@ -329,14 +329,14 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
     psHwDevice = (hw_device_t *)psHwcDevice;
 
     psHwcDevice->common.tag      = HARDWARE_DEVICE_TAG;
-#ifdef HWC_1_3    
+#ifdef HWC_1_3
     psHwcDevice->common.version  = HWC_DEVICE_API_VERSION_1_3;
 #else
     psHwcDevice->common.version  = HWC_DEVICE_API_VERSION_1_1;
 #endif
     psHwcDevice->common.module   = const_cast<hw_module_t*>(module);
     psHwcDevice->common.close    = hwc_device_close;
-    
+
     psHwcDevice->prepare         = hwc_prepare;
     psHwcDevice->set             = hwc_set;
     psHwcDevice->setParameter    = hwc_setParameter;
@@ -347,7 +347,7 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
 	psHwcDevice->getDisplayConfigs = hwc_getDisplayConfigs;
 	psHwcDevice->getDisplayAttributes = hwc_getDisplayAttributes;
     /*
-        open the hardware cursor ,you must modify the setIsCursorLayerHint() in Hwcomposer.cpp for 
+        open the hardware cursor ,you must modify the setIsCursorLayerHint() in Hwcomposer.cpp for
         HWC_DEVICE_API_VERSION_1_4 to HWC_DEVICE_API_VERSION_1_1
     */
     psHwcDevice->setCursorPositionAsync = hwc_set_cursor_async;
@@ -356,7 +356,7 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
 	hwc_create_device();
 
   android::add_sysprop_change_callback(hwc_sysprop_changed, 1000);
-  hwc_sysprop_changed();
+  //hwc_sysprop_changed();
 
     return err;
 }

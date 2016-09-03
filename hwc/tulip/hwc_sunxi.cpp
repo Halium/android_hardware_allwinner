@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 #include "hwc.h"
 
 SUNXI_hwcdev_context_t gSunxiHwcDevice;
@@ -28,14 +28,14 @@ static mem_speed_limit_t mem_speed_limit[3] =
     {432000, 20736000},
 };
 
-static void reset_layer_type(HwcDisContext_t *Localctx, int hwctype) 
+static void reset_layer_type(HwcDisContext_t *Localctx, int hwctype)
 {
     SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
     int j = 0;
     struct private_handle_t *handle = NULL;
     layer_info_t *psAllLayer = Localctx->psAllLayer;
     hwc_layer_1_t *psLayer = NULL;
-    for(j = 0; j < Localctx->numberofLayer; j++) 
+    for(j = 0; j < Localctx->numberofLayer; j++)
     {
         psLayer = psAllLayer[j].psLayer;
         if(psLayer != NULL && psLayer->compositionType != HWC_FRAMEBUFFER_TARGET)
@@ -62,7 +62,7 @@ static void reset_layer_type(HwcDisContext_t *Localctx, int hwctype)
 static void calculate_factor(DisplayInfo *PsDisplayInfo,
         float *XWidthFactor, float *XHighetfactor)
 {
-    
+
     float WidthFactor = (float)PsDisplayInfo->PersentWidth / 100;
     float Highetfactor = (float)PsDisplayInfo->PersentHeight / 100;
     if(PsDisplayInfo->InitDisplayWidth && PsDisplayInfo->InitDisplayHeight)
@@ -119,7 +119,7 @@ static bool reset_local(HwcDisContext_t *Localctx)
         while(j--)
         {
             Localctx->ChannelInfo[i].HwLayer[j] = NULL;
-        } 
+        }
     }
     return 0;
 }
@@ -221,8 +221,8 @@ static bool reset_globle(SUNXI_hwcdev_context_t *Globctx,
         if(Localctx->psAllLayer != NULL)
         {
             psAllLayer = Localctx->psAllLayer;
-            memset(psAllLayer, 0, sizeof(layer_info_t) * Localctx->malloc_layer); 
-            for(j = 0; j < psDisplay->numHwLayers; j++) 
+            memset(psAllLayer, 0, sizeof(layer_info_t) * Localctx->malloc_layer);
+            for(j = 0; j < psDisplay->numHwLayers; j++)
             {
                 psLayer = &psDisplay->hwLayers[j];
                 psAllLayer[j].psLayer = psLayer;
@@ -241,7 +241,7 @@ static bool reset_globle(SUNXI_hwcdev_context_t *Globctx,
                 if(handle != NULL && check_video(handle->format))
                 {
                     Localctx->video_mem += cal_layer_mem(&psAllLayer[j]);
-                    Localctx->video_cnt++; 
+                    Localctx->video_cnt++;
                 }
                 if(handle != NULL
                     && psLayer->transform != 0
@@ -1094,7 +1094,7 @@ HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout,
         dueto = D_CONTIG_MEM;
 	    goto assign_gpu;
     }
-    
+
 	if(check_usage_protected(handle) && !PsDisplayInfo->issecure)
 	{
         ALOGV("%s:Video Protected", __func__);
@@ -1120,7 +1120,7 @@ HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout,
     }
 
     if( !is_cursor
-        && psLayer->transform != 0 
+        && psLayer->transform != 0
         && (Globctx->stop_rotate_hw || !check_fix_rotate(Globctx, psLayer)))
     {
         ALOGD("Many tr_mem[%d,%d,%d] stop[%d]", Globctx->tr_mem_limit,
@@ -1223,7 +1223,7 @@ HwcAssignStatus hwc_try_assign_layer(HwcDisContext_t *Localctx, size_t singcout,
 needchannel:
     if(needchannel)
     {
-        /* here is a fix  :UI has used video channel ,wether reasigend?  
+        /* here is a fix  :UI has used video channel ,wether reasigend?
            could add check video before hwc_try_assign_layer()
            but must check_cross_list() between the videos
         */
@@ -1438,7 +1438,7 @@ int hwc_setup_layer(hwc_dispc_data_t *DisplayData, HwcDisContext_t *Localctx)
             hw_layer_config->iscursor = psHwlayer_info->is_cursor;
             if(psHwlayer_info->is_cursor && !Localctx->fb_has_alpha)
             {
-                /* 
+                /*
                 if cursor,we must set it to the the biggest z-order,
                    if there is nothing alpha in fb, higher than fb
                 */
@@ -1714,7 +1714,7 @@ bool sunxi_set(hwc_display_contents_1_t **displays, size_t numDisplays)
             close(mergfd);
         }
     }
-    /* if miracast need tr  we need sw_sync and merge the fence fd  
+    /* if miracast need tr  we need sw_sync and merge the fence fd
        the disp0 releasefencefd is the wb over,so don't need wb timeline.
     */
 deal_fence:
@@ -1803,7 +1803,7 @@ static int hwc_init_display(void)
     int arg[4] = {0};
     int DispCnt, outtype, permanentdisp, hasDispCnt = 0;
 
-    if (ioctl(Globctx->FBFd, FBIOGET_VSCREENINFO, &info) == -1) 
+    if (ioctl(Globctx->FBFd, FBIOGET_VSCREENINFO, &info) == -1)
     {
         ALOGE("FBIOGET_VSCREENINFO ioctl failed: %s", strerror(errno));
         return -1;
@@ -1939,7 +1939,7 @@ static int hwc_init_display(void)
                 default:
                     ALOGD("not support type");
                 continue;
-                        
+
             }
 #ifdef FORCE_SET_RESOLUTION
             PsDisplayInfo->VarDisplayWidth = FORCE_RESOLUTION_WIDTH;
