@@ -1882,18 +1882,8 @@ static int hwc_init_display(void)
                         refreshRate = 60;
                     }
 
-                    if(info.width == 0)
-                    {
-                        PsDisplayInfo->DiplayDPI_X = 160000;
-                    }else{
-                        PsDisplayInfo->DiplayDPI_X = 1000 * (info.xres * 25.4f) / info.width;
-                    }
-                    if(info.height == 0)
-                    {
-                        PsDisplayInfo->DiplayDPI_Y = 160000;
-                    }else{
-                         PsDisplayInfo->DiplayDPI_Y = 1000 * (info.yres * 25.4f) / info.height;
-                    }
+                    PsDisplayInfo->DiplayDPI_X = PsDisplayInfo->DiplayDPI_Y =
+                      hwc_get_density(info.xres, info.yres);
 
                     PsDisplayInfo->DisplayVsyncP = 1000000000 / refreshRate;
                     PsDisplayInfo->Current3DMode = DISPLAY_2D_ORIGINAL;
@@ -1924,8 +1914,8 @@ static int hwc_init_display(void)
                             PsDisplayInfo->InitDisplayWidth;
                         PsDisplayInfo->VarDisplayHeight =
                             PsDisplayInfo->InitDisplayHeight;
-                        PsDisplayInfo->DiplayDPI_X = 213000;
-                        PsDisplayInfo->DiplayDPI_Y = 213000;
+                        PsDisplayInfo->DiplayDPI_X = PsDisplayInfo->DiplayDPI_Y =
+                          hwc_get_density(PsDisplayInfo->InitDisplayWidth, PsDisplayInfo->InitDisplayHeight);
                         PsDisplayInfo->DisplayVsyncP
                             = 1000000000 /get_info_mode(PsDisplayInfo->DisplayMode, REFRESHRAE);
                         PsDisplayInfo->Current3DMode = DISPLAY_2D_ORIGINAL;

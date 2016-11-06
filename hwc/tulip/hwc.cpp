@@ -45,7 +45,14 @@ hwc_module_t HAL_MODULE_INFO_SYM = {
 
 /*****************************************************************************/
 
-
+int hwc_get_density(int width, int height)
+{
+  char name[100];
+  char value[PROPERTY_VALUE_MAX];
+  sprintf(name, "ro.sf.lcd_density.%d", height);
+  property_get(name, value, "213");
+  return atof(value) * 1000;
+}
 
 static int hwc_blank(struct hwc_composer_device_1* dev, int disp, int blank)
 {

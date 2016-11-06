@@ -27,7 +27,7 @@ static tv_para_t g_tv_para[]=
 {
     {8, DISP_TV_MOD_NTSC,             720,    480, 60,0},
     {8, DISP_TV_MOD_PAL,              720,    576, 60,0},
-    
+
     {5, DISP_TV_MOD_480I,             720,    480, 60,0},
     {5, DISP_TV_MOD_576I,             720,    576, 60,0},
     {5, DISP_TV_MOD_480P,             720,    480, 60,0},
@@ -41,11 +41,11 @@ static tv_para_t g_tv_para[]=
     {5, DISP_TV_MOD_1080I_50HZ,       1920,   1080, 50,0},
     {5, DISP_TV_MOD_1080I_60HZ,       1920,   1080, 60,0},
 
-	
+
 	{5, DISP_TV_MOD_3840_2160P_25HZ,  3840,   2160, 25,0xff},
 	{5, DISP_TV_MOD_3840_2160P_24HZ,  3840,   2160, 24,0xff},
     {5, DISP_TV_MOD_3840_2160P_30HZ,  3840,   2160, 30,0xff},
-    
+
     {1, DISP_TV_MOD_1080P_24HZ_3D_FP, 1920,   1080, 24,0},
     {1, DISP_TV_MOD_720P_50HZ_3D_FP,  1280,   720, 50,0},
     {1, DISP_TV_MOD_720P_60HZ_3D_FP,  1280,   720, 60,0},
@@ -55,7 +55,7 @@ static tv_para_t g_tv_para[]=
 int get_info_mode(int mode,MODEINFO info)
 {
     unsigned int i = 0;
-    
+
     for(i=0; i<sizeof(g_tv_para) / sizeof(tv_para_t); i++)
     {
         if(g_tv_para[i].mode == mode)
@@ -141,7 +141,7 @@ int hwc_manage_display(DisplayInfo **retDisplayInfo, int DispInfo, ManageDisp mo
     }
 
     return -1;
-    
+
 }
 
 disp_tv_mode get_suitable_hdmi_mode(int select, disp_tv_mode lastmode)
@@ -240,8 +240,8 @@ int hwc_hotplug_switch(int DisplayNum, bool plug, disp_tv_mode set_mode)
             PsDisplayInfo->VarDisplayHeight = get_info_mode(set_mode,HEIGHT);
             PsDisplayInfo->DisplayType = DISP_OUTPUT_TYPE_HDMI;
             PsDisplayInfo->DisplayMode = set_mode;
-            PsDisplayInfo->DiplayDPI_X = 213000;
-            PsDisplayInfo->DiplayDPI_Y = 213000;
+            PsDisplayInfo->DiplayDPI_X = PsDisplayInfo->DiplayDPI_Y =
+              hwc_get_density(PsDisplayInfo->InitDisplayWidth, PsDisplayInfo->InitDisplayHeight);
             PsDisplayInfo->DisplayVsyncP = 1000000000/get_info_mode(set_mode, REFRESHRAE);
             PsDisplayInfo->HwChannelNum = DisplayNum?2:4;
             PsDisplayInfo->LayerNumofCH = NUMLAYEROFCHANNEL;
@@ -261,7 +261,8 @@ int hwc_hotplug_switch(int DisplayNum, bool plug, disp_tv_mode set_mode)
             arg[2] = set_mode;
             ioctl(Globctx->DisplayFd, DISP_DEVICE_SWITCH, (unsigned long)arg);
             PsDisplayInfo->setblank = 0;
-            Globctx->psHwcProcs->invalidate(Globctx->psHwcProcs);
+            if(Globctx->psHwcProcs && Globctx->psHwcProcs->invalidate)
+              Globctx->psHwcProcs->invalidate(Globctx->psHwcProcs);
             arg[0] = DisplayNum;
             arg[1] = 1;
             ioctl(Globctx->DisplayFd, DISP_VSYNC_EVENT_EN,(unsigned long)arg);
@@ -269,10 +270,10 @@ int hwc_hotplug_switch(int DisplayNum, bool plug, disp_tv_mode set_mode)
 
             ALOGD("###has no fix HDMI Mode###");
             return 0;
-        }       
+        }
         ALOGD( "###hdmi plug in, Type:%d, Mode:0x%08x###",
                 PsDisplayInfo->DisplayType, PsDisplayInfo->DisplayMode);
-        
+
     }
     else if(Globctx->SunxiDisplay[0].DisplayType != DISP_OUTPUT_TYPE_HDMI){
         Globctx->hot_plug = 0;
@@ -292,7 +293,7 @@ int hwc_hotplug_switch(int DisplayNum, bool plug, disp_tv_mode set_mode)
     if(!plug && Globctx->SunxiDisplay[0].DisplayType != DISP_OUTPUT_TYPE_HDMI)
     {
         arg[0] = DisplayNum;
-        arg[1] = DISP_OUTPUT_TYPE_NONE; 
+        arg[1] = DISP_OUTPUT_TYPE_NONE;
         sleep(1);
         ioctl(Globctx->DisplayFd, DISP_DEVICE_SWITCH, (unsigned long)arg);
         arg[0] = DisplayNum;
@@ -303,7 +304,7 @@ int hwc_hotplug_switch(int DisplayNum, bool plug, disp_tv_mode set_mode)
         {
             ALOGD( "###ALL Display has plug out###");
         }
-            ALOGD( "###hdmi plug out###");       
+            ALOGD( "###hdmi plug out###");
     }
     return 0;
 }
@@ -312,10 +313,10 @@ int hwc_hotplug_switch(int DisplayNum, bool plug, disp_tv_mode set_mode)
 static inline bool check_stop()
 {
 	char property[PROPERTY_VALUE_MAX];
-	int  stop_hwc = 0;	    
+	int  stop_hwc = 0;
 	if (property_get("debug.hwc.forcegpu", property, NULL) >= 0)
 	{
-        stop_hwc = atoi(property);        
+        stop_hwc = atoi(property);
 	}
     return !!stop_hwc;
 }
@@ -371,7 +372,7 @@ static int hwc_uevent(void)
     double fCurrentTime = 0.0;
     ALOGD("######hwc uevent Thread(%d)%p.#######", gettid(), &snl);
 
-	while(1) 
+	while(1)
 	{
         fds.fd = hotplug_sock;
         fds.events = POLLIN;
@@ -411,11 +412,11 @@ static int hwc_uevent(void)
                         if(Globctx->SunxiDisplay[0].VirtualToHWDisplay == display_id)
                         {
                             Globctx->SunxiDisplay[0].mytimestamp = timestamp;
-                            if(Globctx->SunxiDisplay[0].VsyncEnable == 1)
+                            if(Globctx->SunxiDisplay[0].VsyncEnable == 1 && Globctx->psHwcProcs && Globctx->psHwcProcs->vsync)
                             {
                                 Globctx->psHwcProcs->vsync(Globctx->psHwcProcs, 0, timestamp);
                             }
-                        } 
+                        }
                         s += strlen(s) + 1;
                         if(s - buf >= count || s - buf >= buffersize)
                         {
@@ -451,11 +452,10 @@ static int hwc_uevent(void)
 void *vsync_thread_wrapper(void *priv)
 {
     HWC_UNREFERENCED_PARAMETER(priv);
-    
+
 	setpriority(PRIO_PROCESS, 0, HAL_PRIORITY_URGENT_DISPLAY);
 
 	hwc_uevent();
 
 	return NULL;
 }
-

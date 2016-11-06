@@ -818,4 +818,6 @@ extern bool mem_ctrl_power_policy(SUNXI_hwcdev_context_t *Globctx, HwcDisContext
 extern void mem_adjust_moment(SUNXI_hwcdev_context_t *Globctx,
         int diff_all, int lower_limit, int high_limit, bool updata);
 
+extern int hwc_get_density(int width, int height);
+
 #endif
