@@ -17,7 +17,6 @@
 
 #include "hwc.h"
 #include "cutils/properties.h"
-#include <utils/misc.h>
 
 
 static int Framecount = 0;
@@ -271,39 +270,6 @@ static int hwc_device_close(struct hw_device_t *dev)
     return 0;
 }
 
-#define TYPE_BUILT_IN 1
-#define TYPE_HDMI 2
-
-static void hwc_sysprop_changed()
-{
-    int disp = 0;
-
-    ALOGI("hwc_sysprop_changed");
-
-    _hwc_device_set_3d_mode(TYPE_BUILT_IN,
-      (__display_3d_mode)
-      property_get_int32("persist.sys.disp.3d_mode", 0));
-
-    _hwc_device_set_backlight(TYPE_BUILT_IN,
-      property_get_int32("persist.sys.disp.backlight", 0), 0);
-
-    _hwc_device_set_backlight(TYPE_BUILT_IN,
-      property_get_int32("persist.sys.disp.backlight_demo", 0), 1);
-
-    _hwc_device_set_enhancemode(TYPE_BUILT_IN,
-      property_get_int32("persist.sys.disp.enhancemode", 0), 0);
-
-    _hwc_device_set_enhancemode(TYPE_BUILT_IN,
-      property_get_int32("persist.sys.disp.enhancemode_demo", 0), 1);
-
-    _hwc_device_set_output_mode(TYPE_HDMI, DISP_OUTPUT_TYPE_HDMI,
-      property_get_int32("persist.sys.hdmi.output_mode", DISP_TV_MOD_1080P_60HZ));
-
-    _hwc_set_persent(TYPE_HDMI,
-      property_get_int32("persist.sys.hdmi.percent_x", 0),
-      property_get_int32("persist.sys.hdmi.percent_y", 0));
-}
-
 /*****************************************************************************/
 
 static int hwc_device_open(const struct hw_module_t* module, const char* name,
@@ -354,9 +320,6 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
     *device = psHwDevice;
 
 	hwc_create_device();
-
-  android::add_sysprop_change_callback(hwc_sysprop_changed, 1000);
-  //hwc_sysprop_changed();
 
     return err;
 }
