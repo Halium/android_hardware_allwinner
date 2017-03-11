@@ -1,4 +1,4 @@
-# Copyright (C) 2010 The Android Open Source Project
+# Copyright (C) 2011 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-$(warning $(TARGET_BOARD_PLATFORM))
+LOCAL_PATH := $(call my-dir)
 
-MY_LOCAL_PATH := $(call my-dir)
+# libAwSurround.so
+include $(CLEAR_VARS)
+LOCAL_MODULE := libAwSurround
+LOCAL_SRC_FILES := libAwSurround.so
+LOCAL_MODULE_CLASS := SHARED_LIBRARIES
+LOCAL_MODULE_PATH := $(TARGET_OUT)/lib
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_SUFFIX := .so
+LOCAL_MULTILIB := 32
+include $(BUILD_PREBUILT)
 
-# audio effects lib
-include $(MY_LOCAL_PATH)/effects/Android.mk
-
-# audio primary module
-include $(MY_LOCAL_PATH)/$(TARGET_BOARD_PLATFORM)/Android.mk
-
-# audio a2dp module
-include $(MY_LOCAL_PATH)/audio_a2dp_hw/Android.mk
+# libaw_audio3dsur.a
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES:= audio_3d_surround.c
+LOCAL_MODULE:= libaw_audio3dsur
+include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-

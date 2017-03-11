@@ -33,8 +33,10 @@ LOCAL_MODULE_RELATIVE_PATH := hw
 
 LOCAL_SRC_FILES := audio_hw.c audio_iface.c sunxi_volume.c audio_3d_surround/audio_3d_surround.c
 
+LOCAL_STATIC_LIBRARIES += libaw_audio3dsur
+
 #ifneq ($(SW_BOARD_HAVE_3G), true)
-#LOCAL_SRC_FILES += audio_ril_stub.c 
+#LOCAL_SRC_FILES += audio_ril_stub.c
 #else
 #LOCAL_SHARED_LIBRARIES := libaudio_ril
 #endif
@@ -43,15 +45,11 @@ LOCAL_C_INCLUDES += \
 	external/tinyalsa/include \
 	system/media/audio_utils/include \
 	system/media/audio_effects/include \
+	$(LOCAL_PATH)/../effects/audio_3d_surround \
 	system/media/audio_route/include
-	
 
 LOCAL_SHARED_LIBRARIES += liblog libcutils libtinyalsa libaudioutils libdl libcodec_audio libril_audio libaudioroute
-LOCAL_SHARED_LIBRARIES_32 += libAwHeadpSurround
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_SHARED_LIBRARY)
 
 include $(call all-makefiles-under, $(LOCAL_PATH))
-
-
-

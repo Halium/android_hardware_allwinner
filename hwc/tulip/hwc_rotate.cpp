@@ -129,7 +129,7 @@ static rotate_cache_t *hwc_ratate_cache_manage(SUNXI_hwcdev_context_t *Globctx, 
     return ratate_cache;
 }
 
-static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int fd, unsigned int sync_count)
+static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int fd, unsigned int sync_count, bool is_secure)
 {
     SUNXI_hwcdev_context_t *Globctx = &gSunxiHwcDevice;
     hwc_cache_t *tr_cache = NULL;
@@ -163,7 +163,7 @@ static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int
         close(tr_cache->fd);
         tr_cache->fd = -1;
     }
-    if(tr_cache->share_fd >= 0 && size <= tr_cache->size_buffer)
+    if(tr_cache->share_fd >= 0 && size <= tr_cache->size_buffer && tr_cache->is_secure == is_secure)
     {
         if(tr_cache->size_buffer - size > 4096)
         {
@@ -181,22 +181,35 @@ static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int
     }
     if(tr_cache->share_fd == -1 || tr_cache->size_buffer == 0)
     {
-        ret = ion_alloc_fd(Globctx->IonFd, size,
-                4096, ION_HEAP_TYPE_DMA_MASK, 0, &tr_cache->share_fd);
-        if(ret < 0)
-        {
-            ALOGD("alloc err from ION_HEAP_TYPE_DMA_MASK");
-            ret =  ion_alloc_fd(Globctx->IonFd, size,
-                    4096, ION_HEAP_SYSTEM_CONTIG_MASK, 0, &tr_cache->share_fd);
+		if(is_secure){
+			ret = ion_alloc_fd(Globctx->IonFd, size,
+                4096,  ION_HEAP_SECURE_MASK, 0, &tr_cache->share_fd);
             if(ret < 0)
             {
-                ALOGD("alloc err from ION_HEAP_SYSTEM_CONTIG_MASK");
-                tr_cache->share_fd = -1;
-                tr_cache->size_buffer = 0;
-                return NULL;
+                 ALOGD("alloc err from ION_HEAP_SECURE_MASK");
+                 return NULL;
             }
-        }
-        ion_sync_fd(Globctx->IonFd, tr_cache->share_fd);
+            tr_cache->is_secure = 1;
+		}else{
+			ret = ion_alloc_fd(Globctx->IonFd, size,
+                4096, ION_HEAP_TYPE_DMA_MASK, 0, &tr_cache->share_fd);
+	        if(ret < 0)
+	        {
+	            ALOGD("alloc err from ION_HEAP_TYPE_DMA_MASK");
+	            ret =  ion_alloc_fd(Globctx->IonFd, size,
+	                    4096, ION_HEAP_SYSTEM_CONTIG_MASK, 0, &tr_cache->share_fd);
+	            if(ret < 0)
+	            {
+	                ALOGD("alloc err from ION_HEAP_SYSTEM_CONTIG_MASK");
+	                tr_cache->share_fd = -1;
+	                tr_cache->size_buffer = 0;
+	                return NULL;
+	            }
+	        }
+		}
+        if(!is_secure){
+        	ion_sync_fd(Globctx->IonFd, tr_cache->share_fd);
+		}
         tr_cache->size_buffer = size;
     }
     tr_cache->sync_cnt = sync_count;
@@ -645,7 +658,7 @@ bool hwc_rotate_layer_tr(hwc_dispc_data_t *hwc_layer,
         goto translat_err;
     }
     tr_cache = hwc_tr_cache_get(rotate_cache, size,
-                commit_data->releasefencefd[disp], hwc_layer->sync_count);
+                commit_data->releasefencefd[disp], hwc_layer->sync_count,commit_layer->is_secure);
     if(tr_cache != NULL)
     {
         memset(&tr_info, 0, sizeof(tr_info));

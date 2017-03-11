@@ -48,7 +48,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "audio_3d_surround/audio_3d_surround.h"
+#include "audio_3d_surround.h"
 #define  USE_3D_SURROUND 1
 
 #define F_LOG ALOGV("%s, line: %d", __FUNCTION__, __LINE__);
@@ -341,6 +341,7 @@ struct sunxi_audio_device {
 	struct pcm_buf_manager PcmManager;
 	struct audio_route *ar;
 	struct volume_array *vol_array;
+	struct audio_patch audiopatch;
 };
 
 
@@ -525,6 +526,7 @@ static int set_route_by_array(struct mixer *mixer, struct route_setting *route,
 {
 	struct mixer_ctl *ctl;
 	unsigned int i, j;
+<<<<<<< HEAD
 
 	/* Go through the route array and set each value */
 	i = 0;
@@ -550,6 +552,33 @@ static int set_route_by_array(struct mixer *mixer, struct route_setting *route,
 		i++;
 	}
 
+=======
+
+	/* Go through the route array and set each value */
+	i = 0;
+	while (route[i].ctl_name) {
+		ctl = mixer_get_ctl_by_name(mixer, route[i].ctl_name);
+		if (!ctl)
+			return -EINVAL;
+
+		if (route[i].strval) {
+			if (enable)
+				mixer_ctl_set_enum_by_string(ctl, route[i].strval);
+			else
+				mixer_ctl_set_enum_by_string(ctl, "Off");
+		} else {
+			/* This ensures multiple (i.e. stereo) values are set jointly */
+			for (j = 0; j < mixer_ctl_get_num_values(ctl); j++) {
+				if (enable)
+					mixer_ctl_set_value(ctl, j, route[i].intval);
+				else
+					mixer_ctl_set_value(ctl, j, 0);
+			}
+		}
+		i++;
+	}
+
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 	return 0;
 }
 
@@ -1584,6 +1613,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 						((val & AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET) ^
 						 (adev->out_device & AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET)))
 					do_output_standby(out);
+<<<<<<< HEAD
 			}
 			adev->out_device = val;
 			F_LOG;
@@ -1591,6 +1621,15 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 			if (adev->mode == AUDIO_MODE_IN_CALL || adev->mode == AUDIO_MODE_MODE_FACTORY_TEST || adev->mode == AUDIO_MODE_FM){
 				adev_set_voice_volume(&adev->hw_device, adev->voice_volume);
 			}
+=======
+			}
+			adev->out_device = val;
+			F_LOG;
+			select_device(adev);
+			if (adev->mode == AUDIO_MODE_IN_CALL || adev->mode == AUDIO_MODE_MODE_FACTORY_TEST || adev->mode == AUDIO_MODE_FM){
+				adev_set_voice_volume(&adev->hw_device, adev->voice_volume);
+			}
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 		}
 
 		pthread_mutex_unlock(&out->lock);
@@ -1732,8 +1771,17 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
 	}
 
 #if  USE_3D_SURROUND
+<<<<<<< HEAD
 	if (surround_ready(sur) && surround_use(adev->out_device))
 		surround_process(sur, (short*)buf, out_frames, out->config.channels);
+=======
+        if (sur_enable(&sur)) {
+                if (sur_prepare(&sur, adev->out_device, spk_dul_used, out->config.rate,
+                        out->config.channels, out_frames)) {
+                        sur_process(&sur, (short*)buf, out_frames, out->config.channels);
+                        }
+                }
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 #endif
 
 	ret = pcm_write(out->pcm, (void *)buf, out_frames * frame_size);
@@ -1744,12 +1792,21 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
 
 exit:
 	pthread_mutex_unlock(&out->lock);
+<<<<<<< HEAD
 
 	if (ret != 0) {
 		usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
 				out_get_sample_rate(&stream->common));
 	}
 
+=======
+
+	if (ret != 0) {
+		usleep(bytes * 1000000 / audio_stream_frame_size(&stream->common) /
+				out_get_sample_rate(&stream->common));
+	}
+
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 	if (force_input_standby) {
 		pthread_mutex_lock(&adev->lock);
 		if (adev->active_input) {
@@ -2273,12 +2330,21 @@ static ssize_t read_frames(struct sunxi_stream_in *in, void *buffer, ssize_t fra
 			}
 			release_buffer(&in->buf_provider, &buf);
 		}
+<<<<<<< HEAD
 
 		/* in->read_status is updated by getNextBuffer() also called by
 		 * in->resampler->resample_from_provider() */
 		if (in->read_status != 0)
 			return in->read_status;
 
+=======
+
+		/* in->read_status is updated by getNextBuffer() also called by
+		 * in->resampler->resample_from_provider() */
+		if (in->read_status != 0)
+			return in->read_status;
+
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 		frames_wr += frames_rd;
 	}
 	return frames_wr;
@@ -2508,10 +2574,17 @@ static int in_remove_audio_effect(const struct audio_stream *stream,
 			found = true;
 		}
 	}
+<<<<<<< HEAD
 
 	if (status != 0)
 		goto exit;
 
+=======
+
+	if (status != 0)
+		goto exit;
+
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 	in->num_preprocessors--;
 
 	status = (*effect)->get_descriptor(effect, &desc);
@@ -2898,6 +2971,7 @@ static void adev_close_input_stream(struct audio_hw_device *dev,
 	struct sunxi_audio_device *ladev 	= (struct sunxi_audio_device *)dev;
 
 	in_standby(&stream->common);
+<<<<<<< HEAD
 
 	if (in->buffer) {
 		free(in->buffer);
@@ -2917,11 +2991,63 @@ static void adev_close_input_stream(struct audio_hw_device *dev,
 	}
 	free(stream);
 
+=======
+
+	if (in->buffer) {
+		free(in->buffer);
+		in->buffer = 0;
+	}
+	if (in->resampler) {
+		release_resampler(in->resampler);
+		in->resampler = 0;
+	}
+	if (ladev->af_capture_flag) {
+		ladev->af_capture_flag = false;
+	}
+	if (ladev->PcmManager.BufStart) {
+		ladev->PcmManager.BufExist = false;
+		free(ladev->PcmManager.BufStart);
+		ladev->PcmManager.BufStart = 0;
+	}
+	free(stream);
+
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 	normal_record_enable(false);
 	fm_record_enable(false);
 	phone_record_enable(false);
 	ALOGD("adev_close_input_stream set voice record status");
 	return;
+<<<<<<< HEAD
+=======
+}
+
+int adev_create_audio_patch(struct audio_hw_device *dev,
+	   unsigned int num_sources,
+	   const struct audio_port_config *sources,
+	   unsigned int num_sinks,
+	   const struct audio_port_config *sinks,
+	   audio_patch_handle_t *handle)
+{
+	return 0;
+}
+
+int adev_release_audio_patch(struct audio_hw_device *dev,
+	   audio_patch_handle_t handle)
+{
+	return 0;
+}
+
+int adev_get_audio_port(struct audio_hw_device *dev,
+	   struct audio_port *port)
+{
+	return 0;
+}
+
+int adev_set_audio_port_config(struct audio_hw_device *dev,
+	   const struct audio_port_config *config)
+{
+	return 0;
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 }
 
 static int adev_dump(const audio_hw_device_t *device, int fd)
@@ -2934,7 +3060,11 @@ static int adev_close(hw_device_t *device)
 	struct sunxi_audio_device *adev = (struct sunxi_audio_device *)device;
 
 #if USE_3D_SURROUND
+<<<<<<< HEAD
 	surround_exit(&sur);
+=======
+	sur_exit(&sur);
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 #endif
 
 	audio_route_free(adev->ar);
@@ -3030,6 +3160,10 @@ static int adev_open(const hw_module_t* module, const char* name,
 	adev->hw_device.close_output_stream 	= adev_close_output_stream;
 	adev->hw_device.open_input_stream 		= adev_open_input_stream;
 	adev->hw_device.close_input_stream 		= adev_close_input_stream;
+	adev->hw_device.create_audio_patch 		= adev_create_audio_patch;
+	adev->hw_device.release_audio_patch 	= adev_release_audio_patch;
+	adev->hw_device.get_audio_port 			= adev_get_audio_port;
+	adev->hw_device.set_audio_port_config 	= adev_set_audio_port_config;
 	adev->hw_device.dump 					= adev_dump;
 	adev->raw_flag 							= false;
 	/* Set the default route before the PCM stream is opened */
@@ -3070,7 +3204,11 @@ static int adev_open(const hw_module_t* module, const char* name,
 	case_init();
 
 #if USE_3D_SURROUND
+<<<<<<< HEAD
 	surround_init(&sur, MM_SAMPLING_RATE, 2, SHORT_PERIOD_SIZE);
+=======
+	sur_init(&sur, MM_SAMPLING_RATE, 2, SHORT_PERIOD_SIZE);
+>>>>>>> de1e5bc... Update to Android 7.0 of AW
 #endif
 
 	return 0;

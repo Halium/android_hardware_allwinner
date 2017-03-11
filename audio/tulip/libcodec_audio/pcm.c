@@ -724,7 +724,6 @@ int pcm_wait(struct pcm *pcm, int timeout)
 }
 
 
-/* 通过驱动的名称来设备节点编号 */
 int pcm_get_node_number(char *name)
 {
 	char card[32];
@@ -764,7 +763,7 @@ int pcm_get_node_number(char *name)
 			continue;
 		}
 
-		/* 去掉换行符 */
+
 		for(j = 0; j < 32; j++){
 			if(id[j] == 0x0a){
 		            id[j] = 0;

@@ -1,4 +1,4 @@
-# Copyright (C) 2010 The Android Open Source Project
+# Copyright (C) 2011 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-$(warning $(TARGET_BOARD_PLATFORM))
-
-MY_LOCAL_PATH := $(call my-dir)
-
-# audio effects lib
-include $(MY_LOCAL_PATH)/effects/Android.mk
-
-# audio primary module
-include $(MY_LOCAL_PATH)/$(TARGET_BOARD_PLATFORM)/Android.mk
-
-# audio a2dp module
-include $(MY_LOCAL_PATH)/audio_a2dp_hw/Android.mk
-
+LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
+include $(call all-makefiles-under,$(LOCAL_PATH))

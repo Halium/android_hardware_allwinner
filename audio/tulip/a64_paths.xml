@@ -89,6 +89,7 @@
     <ctl name="ADCL Mux" value="ADC" />    
     <ctl name="LADC input Mixer MIC1 boost Switch" value="1" />
     <ctl name="RADC input Mixer MIC1 boost Switch" value="1" />
+    <ctl name="ADC volume" value="180" />
   </path>
 
   <path name="media-digital-mic">
@@ -110,6 +111,7 @@
     <ctl name="AIF1 AD0R Mixer ADCR Switch" value="1" />
     <ctl name="AIF1OUT0L Mux" value="AIF1_AD0L" />
     <ctl name="AIF1OUT0R Mux" value="AIF1_AD0R" />
+    <ctl name="ADC volume" value="160" />
   </path>
 
   <!-- dbb phone path -->

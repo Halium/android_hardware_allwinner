@@ -41,8 +41,8 @@
 
 #include "audio_iface.h"
 #include "volume.h"
-
-#include <cutils/properties.h> // for property_get
+#include "audio_3d_surround.h"
+#define  USE_3D_SURROUND 1
 
 #define F_LOG ALOGV("%s, line: %d", __FUNCTION__, __LINE__);
 
@@ -107,6 +107,7 @@ static bool NO_EARPIECE = 1;
 
 static bool last_call_path_is_bt = 0;
 static bool dmic_used = 0;
+static bool spk_dul_used = 1;
 static bool last_communication_is_bt = 0;
 
 /*VOLUME CTL*/
@@ -325,6 +326,10 @@ struct sunxi_audio_device {
 	struct audio_route *ar;
 	struct volume_array *vol_array;
 };
+
+#if USE_3D_SURROUND
+struct audio_3d_surround sur;
+#endif
 
 struct sunxi_stream_out {
     struct audio_stream_out stream;
@@ -1736,6 +1741,15 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
 		memset(buf, 0, out_frames * frame_size); //mute
 	}
 
+#if  USE_3D_SURROUND
+	if (sur_enable(&sur)) {
+		if (sur_prepare(&sur, adev->out_device, spk_dul_used, out->config.rate,
+			out->config.channels, out_frames)) {
+			sur_process(&sur, (short*)buf, out_frames, out->config.channels);
+		}
+	}
+#endif
+
     ret = pcm_write(out->pcm, (void *)buf, out_frames * frame_size);
 	if(ret!=0)
 	{
@@ -2973,7 +2987,9 @@ static int adev_close(hw_device_t *device)
 	audio_route_free(adev->ar);
 	free(adev->vol_array);
 	free(device);
-
+#if USE_3D_SURROUND
+	sur_exit(&sur);
+#endif
 	return 0;
 }
 
@@ -3005,6 +3021,17 @@ static int case_init(void)
 	}else{
 		dmic_used = false;
 	}
+
+	ret = property_get("ro.spk_dul.used", prop_value, "0");
+	if (ret <= 0) {
+		ALOGE("wrn: ro.spk_dul.used");
+	}
+	if (!strcmp(prop_value, "true")) {
+		spk_dul_used = true;
+	} else {
+		spk_dul_used = false;
+	}
+
 	ret = property_get("ro.sw.audio.codec_plan_name", device_name, "0");
 	if(ret <= 0){
 		ALOGE("wrn: get ro.sw.audio.codec_plan_name failed");
@@ -3092,7 +3119,9 @@ static int adev_open(const hw_module_t* module, const char* name,
 		ALOGE("err: ril_dev_init ****LINE:%d,FUNC:%s",__LINE__,__FUNCTION__);
 	}
 	case_init();
-
+#if USE_3D_SURROUND
+	sur_init(&sur, MM_SAMPLING_RATE, 2, SHORT_PERIOD_SIZE);
+#endif
 	return 0;
 
 error_out:

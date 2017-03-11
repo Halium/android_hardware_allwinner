@@ -269,7 +269,11 @@ int InitAddLayerTail(head_list_t* LayerHead,hwc_layer_1_t *psLayer, int Order,in
     Layer_list_t* LayerTmp = NULL;
     while((i--)&&(LayerTmp == NULL))
     {
-        LayerTmp=(Layer_list_t* )calloc(1, sizeof(Layer_list_t));
+	    LayerTmp=(Layer_list_t* )calloc(1, sizeof(Layer_list_t));
+	    if(LayerTmp == NULL) {
+		    ALOGE("InitAddLayerTail:calloc memory for LayerTmp fail !");
+		    return 0;
+	    }
     }
     LayerTmp->pslayer = psLayer;
     LayerTmp->Order = Order;

@@ -46,7 +46,7 @@ LOCAL_C_INCLUDES += $(TARGET_HARDWARE_INCLUDE)
 LOCAL_C_INCLUDES +=system/core/include/ \
 		system/core/libion/include/ \
 		system/core/libsync/include/
-LOCAL_MODULE := hwcomposer.$(TARGET_BOARD_PLATFORM)
+LOCAL_MODULE := hwcomposer.tulip
 LOCAL_CFLAGS:= -DLOG_TAG=\"hwcomposer\"
 LOCAL_MODULE_TAGS := optional
 TARGET_GLOBAL_CFLAGS += -DTARGET_BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
