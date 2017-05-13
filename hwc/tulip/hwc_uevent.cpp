@@ -152,16 +152,28 @@ disp_tv_mode get_suitable_hdmi_mode(int select, disp_tv_mode lastmode)
     int ret, i, j = -1;
     disp_tv_mode theMostMode = DISP_TV_MODE_NUM;
     i = sizeof(g_tv_para) / sizeof(g_tv_para[0]);
-    if(lastmode < DISP_TV_MODE_NUM)
-    {
-            arg[1] = DISP_OUTPUT_TYPE_HDMI;
-	        arg[2] = lastmode;
-            ret = ioctl(Globctx->DisplayFd, DISP_DEVICE_SWITCH, arg);
-	        if(ret >= 0)
-	        {
-                return lastmode;
-	        }
+
+    if (lastmode == DISP_TV_MODE_NUM) {
+        struct disp_output disp_output;
+        arg[1] = (unsigned long)&disp_output;
+        ret = ioctl(Globctx->DisplayFd, DISP_GET_OUTPUT, arg);
+        ALOGV("get_suitable_hdmi_mode select: %d, type: %d, mode: %d, ret: %d, errno: %d",
+            select, disp_output.type, disp_output.mode, ret, errno);
+        if(ret >= 0 && disp_output.type == DISP_OUTPUT_TYPE_HDMI) {
+            lastmode = (disp_tv_mode)disp_output.mode;
+        }
     }
+
+    if(lastmode < DISP_TV_MODE_NUM) {
+        arg[1] = DISP_OUTPUT_TYPE_HDMI;
+        arg[2] = lastmode;
+        ret = ioctl(Globctx->DisplayFd, DISP_DEVICE_SWITCH, arg);
+        if(ret >= 0)
+        {
+            return lastmode;
+        }
+    }
+
     while(i > 0)
     {
         i--;
