@@ -41,6 +41,8 @@ static tv_para_t g_tv_para[]=
     {5, DISP_TV_MOD_1080I_50HZ,       1920,   1080, 50,0},
     {5, DISP_TV_MOD_1080I_60HZ,       1920,   1080, 60,0},
 
+    {5, DISP_TV_MOD_800_480P,      800,   480, 60,0},
+    {5, DISP_TV_MOD_1024_600P,      1024,  600, 60,0},
 
 	{5, DISP_TV_MOD_3840_2160P_25HZ,  3840,   2160, 25,0xff},
 	{5, DISP_TV_MOD_3840_2160P_24HZ,  3840,   2160, 24,0xff},
