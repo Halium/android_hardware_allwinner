@@ -78,55 +78,6 @@ static int hwc_blank(struct hwc_composer_device_1* dev, int disp, int blank)
     return 0;
 }
 
-static int hwc_setParameter(struct hwc_composer_device_1* dev, int cmd, int disp,
-            int para0, int para1)
-{
-	int ret = 0;
-	HWC_UNREFERENCED_PARAMETER(dev);
-	switch(cmd)
-	{
-		case DISPLAY_CMD_SET3DMODE:
-			ret = _hwc_device_set_3d_mode(disp, (__display_3d_mode)para0);
-			break;
-		case DISPLAY_CMD_SETBACKLIGHTMODE:
-			ret = _hwc_device_set_backlight(disp, para0, 0);
-			break;
-		case DISPLAY_CMD_SETBACKLIGHTDEMOMODE:
-			ret = _hwc_device_set_backlight(disp, para0, 1);
-			break;
-		case DISPLAY_CMD_SETDISPLAYENHANCEMODE:
-			ret = _hwc_device_set_enhancemode(disp, para0, 0);
-			break;
-		case DISPLAY_CMD_SETDISPLAYENHANCEDEMOMODE:
-			ret = _hwc_device_set_enhancemode(disp, para0, 1);
-			break;
-		case DISPLAY_CMD_SETOUTPUTMODE:
-			ret = _hwc_device_set_output_mode(disp, para0, para1);
-			break;
-        case DISPLAY_CMD_HDMIPERSENT:
-
-            ret = _hwc_set_persent(disp, para0, para1);
-            break;
-		default:
-			break;
-	}
-
-	return ret;
-}
-
-
-static int hwc_getParameter(struct hwc_composer_device_1* dev, int cmd, int disp,
-            int para0, int para1)
-{
-    HWC_UNREFERENCED_PARAMETER(dev);
-    HWC_UNREFERENCED_PARAMETER(cmd);
-    HWC_UNREFERENCED_PARAMETER(disp);
-    HWC_UNREFERENCED_PARAMETER(para0);
-    HWC_UNREFERENCED_PARAMETER(para1);
-    return 0;
-}
-
-
 
 static
 int hwc_prepare(hwc_composer_device_1_t *dev, size_t numDisplays,
@@ -312,8 +263,6 @@ static int hwc_device_open(const struct hw_module_t* module, const char* name,
 
     psHwcDevice->prepare         = hwc_prepare;
     psHwcDevice->set             = hwc_set;
-    psHwcDevice->setParameter    = hwc_setParameter;
-    psHwcDevice->getParameter    = hwc_getParameter;
     psHwcDevice->registerProcs   = hwc_register_procs;
     psHwcDevice->eventControl	 = hwc_eventControl;
 	psHwcDevice->blank			 = hwc_blank;
