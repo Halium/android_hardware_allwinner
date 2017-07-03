@@ -1604,7 +1604,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 		pthread_mutex_unlock(&adev->lock);
 	}
 
-	ret = str_parms_get_str(parms, AUDIO_PARAMETER_RAW_DATA_OUT, value, sizeof(value));
+	ret = str_parms_get_str(parms, "raw_data_output", value, sizeof(value));
 	if (ret >= 0) {
 		bool bval = (atoi(value) == 1) ? true : false;
 		ALOGV("AUDIO_PARAMETER_RAW_DATA_OUT: %d", bval);
