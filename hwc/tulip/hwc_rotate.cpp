@@ -182,8 +182,8 @@ static hwc_cache_t *hwc_tr_cache_get(rotate_cache_t *rotate_cache, int size, int
     if(tr_cache->share_fd == -1 || tr_cache->size_buffer == 0)
     {
 		if(is_secure){
-			ret = ion_alloc_fd(Globctx->IonFd, size,
-                4096,  ION_HEAP_SECURE_MASK, 0, &tr_cache->share_fd);
+//			ret = ion_alloc_fd(Globctx->IonFd, size,
+//                4096,  ION_HEAP_SECURE_MASK, 0, &tr_cache->share_fd);
             if(ret < 0)
             {
                  ALOGD("alloc err from ION_HEAP_SECURE_MASK");
